@@ -1,332 +1,548 @@
 ---
-// Case Study Page Template with Image Gallery
-// Dynamic route for individual project case studies
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import Navbar from "../../components/layout/Navbar.astro";
 import Footer from "../../components/sections/Footer.astro";
-import BookingModal from "../../components/modals/BookingModal.astro";
-import { projects } from "../../data/projects";
+import ProjectCover from "../../components/ui/ProjectCover.astro";
+import { projects, disciplineLabels, statusLabels } from "../../data/projects";
+import fs from "node:fs";
+import path from "node:path";
 
 export const prerender = true;
 
 export function getStaticPaths() {
   return projects.map((project) => ({
     params: { slug: project.slug },
+    props: { project },
   }));
 }
 
-const { slug } = Astro.params;
-const project = projects.find((p) => p.slug === slug);
+const { project } = Astro.props;
 
-if (!project) {
-  return Astro.redirect("/404");
-}
+const coverPath = path.join(process.cwd(), "public", "projects", `${project.slug}-main.png`);
+const hasCover = fs.existsSync(coverPath);
+const src = hasCover ? `/projects/${project.slug}-main.png` : undefined;
+
+// Next project in the list, so a case study never dead-ends.
+const index = projects.findIndex((p) => p.slug === project.slug);
+const next = projects[(index + 1) % projects.length];
 ---
 
-<BaseLayout title={`${project.title} | P. James`} description={project.description}>
-  <main class="min-h-screen pt-8 md:pt-16 pb-16">
-    <!-- Hero Section -->
-    <section class="container-fluid mb-12">
-      <a href="/work" class="inline-flex items-center gap-2 text-muted hover:text-accent transition mb-8 group">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="group-hover:-translate-x-1 transition-transform">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
+<BaseLayout title={`${project.title} | vojmax`} description={project.tagline}>
+  <Navbar alwaysVisible={true} homeSectionLinks={true} />
+
+  <main class="case-study pt-24 md:pt-28 pb-20">
+    <div class="container-fluid">
+      <a href="/work" class="back-link group">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path d="M19 12H5M12 19l-7-7 7-7"></path>
         </svg>
-        Back to Frameworks
+        All work
       </a>
-      
-      <div class="grid lg:grid-cols-2 gap-12 items-center">
-        <!-- Content -->
-        <div>
-          <div class="flex items-center gap-3 mb-4">
-            <span class="inline-flex items-center gap-1 px-2 py-1 rounded border border-orange-500/30 bg-orange-500/10">
-              <span class="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>
-              <span class="font-mono text-[10px] uppercase tracking-wider text-orange-400">
-                {project.badge}
-              </span>
-            </span>
-            <span class="text-muted text-sm">{project.year}</span>
-          </div>
-          
-          <h1 class="text-4xl md:text-5xl font-bold text-text mb-4 leading-tight">
-            {project.title}
-          </h1>
-          
-          <p class="text-lg text-muted mb-6 leading-relaxed">
-            {project.description}
-          </p>
-          
-          <div class="flex flex-wrap gap-2 mb-8">
-            {project.tools.map((tool) => (
-              <span class="px-3 py-1 text-xs font-medium bg-panel2 border soft-border shadow-sm rounded-sm transition-all">
-                {tool}
-              </span>
-            ))}
-          </div>
-          
-          <a href={project.link} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-3 px-6 py-3 bg-orange-500 text-black font-bold rounded-full hover:bg-orange-400 transition-all hover:scale-105">
-            <span>View Project</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-              <polyline points="15 3 21 3 21 9"></polyline>
-              <line x1="10" y1="14" x2="21" y2="3"></line>
-            </svg>
-          </a>
+
+      <!-- Header -->
+      <header class="cs-head">
+        <div class="cs-meta font-mono">
+          <span class={`status status-${project.status}`}>
+            {statusLabels[project.status]}
+          </span>
+          <span>{project.category}</span>
+          <span>{project.year}</span>
         </div>
-        
-        <!-- Main Image -->
-        <div class="relative aspect-video rounded-2xl overflow-hidden border border-[rgb(var(--border)/0.14)]">
-          <img 
-            src={project.image} 
-            alt={project.title}
-            class="w-full h-full object-cover"
-            loading="eager"
-          />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+
+        <h1 class="cs-title font-display">{project.title}</h1>
+        <p class="cs-tagline">{project.tagline}</p>
+
+        <div class="cs-links">
+          {
+            project.repo && (
+              <a href={project.repo} target="_blank" rel="noopener" class="cs-link primary">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+                </svg>
+                Source
+              </a>
+            )
+          }
+          {
+            project.demo && (
+              <a href={project.demo} target="_blank" rel="noopener" class="cs-link">
+                Live site
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                  <path d="M15 3h6v6M10 14L21 3" />
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                </svg>
+              </a>
+            )
+          }
+          {
+            !project.repo && !project.demo && (
+              <p class="cs-nolink">Not public yet. Happy to walk through it.</p>
+            )
+          }
         </div>
+      </header>
+
+      <!-- Cover -->
+      <div class="cs-cover">
+        <ProjectCover
+          title={project.title}
+          slug={project.slug}
+          hue={project.hue}
+          size="hero"
+          src={src}
+        />
       </div>
-    </section>
-    
-    <!-- Image Gallery -->
-    <section class="container-fluid mb-16">
-      <h2 class="text-xl font-bold text-text mb-6 flex items-center gap-3">
-        <span class="w-8 h-px bg-orange-500"></span>
-        Project Gallery
-      </h2>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {project.gallery.map((img, index) => (
-          <button 
-            class="gallery-thumb group relative aspect-video rounded-xl overflow-hidden border border-[rgb(var(--border)/0.14)] hover:border-orange-500/50 transition-all cursor-pointer"
-            data-index={index}
-          >
-            <img 
-              src={img} 
-              alt={`${project.title} - Image ${index + 1}`}
-              class="w-full h-full object-cover transition-transform group-hover:scale-105"
-              loading="lazy"
-            />
-            <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5">
-                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
-              </svg>
-            </div>
-          </button>
-        ))}
-      </div>
-    </section>
-    
-    <!-- Case Study Content (Optional) -->
-    <section class="container-fluid">
-      <div class="max-w-3xl mx-auto">
-        
-        <!-- The Challenge -->
-        {project.challenge && (
-          <div class="mb-12">
-            <h2 class="text-2xl font-bold text-text mb-4 flex items-center gap-3">
-              <span class="w-8 h-px bg-orange-500"></span>
-              The Challenge
-            </h2>
-            <p class="text-muted leading-relaxed text-lg">
-              {project.challenge}
-            </p>
-          </div>
-        )}
-        
-        <!-- The Solution -->
-        {project.solution && (
-          <div class="mb-12">
-            <h2 class="text-2xl font-bold text-text mb-4 flex items-center gap-3">
-              <span class="w-8 h-px bg-orange-500"></span>
-              The Solution
-            </h2>
-            <p class="text-muted leading-relaxed text-lg">
-              {project.solution}
-            </p>
-          </div>
-        )}
-        
-        <!-- Results -->
-        {project.results && project.results.length > 0 && (
-          <div class="mb-12">
-            <h2 class="text-2xl font-bold text-text mb-6 flex items-center gap-3">
-              <span class="w-8 h-px bg-orange-500"></span>
-              The Results
-            </h2>
-            <div class="grid sm:grid-cols-2 gap-4">
-              {project.results.map((result) => (
-                <div class="p-4 rounded-xl bg-[rgb(var(--panel2)/0.45)] border border-[rgb(var(--border)/0.12)]">
-                  <div class="flex items-start gap-3">
-                    <svg class="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                    </svg>
-                    <span class="text-text/85">{result}</span>
-                  </div>
-                </div>
+
+      <!-- Body -->
+      <div class="cs-body">
+        <article class="cs-prose">
+          <section>
+            <h2 class="cs-h2">Overview</h2>
+            {project.overview.map((para) => <p>{para}</p>)}
+          </section>
+
+          <section>
+            <h2 class="cs-h2">What it does</h2>
+            <ul class="cs-list">
+              {project.highlights.map((item) => (
+                <li>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    aria-hidden="true"
+                  >
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                  <span>{item}</span>
+                </li>
               ))}
-            </div>
+            </ul>
+          </section>
+
+          {
+            project.architecture && (
+              <section>
+                <h2 class="cs-h2">How it's put together</h2>
+                <p>{project.architecture}</p>
+              </section>
+            )
+          }
+
+          {
+            project.notes && (
+              <section>
+                <h2 class="cs-h2">Limits &amp; open questions</h2>
+                <p class="cs-note">{project.notes}</p>
+              </section>
+            )
+          }
+        </article>
+
+        <!-- Sidebar -->
+        <aside class="cs-aside">
+          <div class="aside-block">
+            <h3 class="aside-label">My role</h3>
+            <p class="aside-text">{project.role}</p>
           </div>
-        )}
-        
-        <!-- CTA -->
-        <div class="text-center p-8 rounded-2xl bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/20">
-          <h3 class="text-2xl font-bold text-text mb-3">
-            Ready to Build Your System?
-          </h3>
-          <p class="text-muted mb-6">
-            Let's architect something that works while you sleep.
-          </p>
-          <a href="/pricing" class="inline-flex items-center gap-3 px-8 py-4 bg-orange-500 text-black font-bold text-lg rounded-full hover:bg-orange-400 transition-all hover:scale-105">
-            <span>View Pricing</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-              <polyline points="12 5 19 12 12 19"></polyline>
-            </svg>
-          </a>
-        </div>
+
+          <div class="aside-block">
+            <h3 class="aside-label">Stack</h3>
+            <ul class="aside-tags">
+              {project.stack.map((tech) => <li>{tech}</li>)}
+            </ul>
+          </div>
+
+          <div class="aside-block">
+            <h3 class="aside-label">Discipline</h3>
+            <ul class="aside-tags">
+              {
+                project.disciplines.map((d) => (
+                  <li>
+                    <a href={`/work?filter=${d}`}>{disciplineLabels[d]}</a>
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+        </aside>
       </div>
-    </section>
-  </main>
-  
-  <!-- Lightbox for Gallery -->
-  <dialog id="lightbox" class="fixed inset-0 z-[100] bg-black/95 backdrop:bg-black/95 p-4 max-w-full max-h-full w-full h-full">
-    <div id="lightbox-stage" class="relative w-full h-full flex items-center justify-center" style="touch-action: pan-y;">
-      <button id="lightbox-close" class="absolute top-4 right-4 p-2 text-white hover:text-orange-400 transition">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
-      </button>
-      <button
-        id="lightbox-prev"
-        class="absolute left-4 md:left-6 p-2 rounded-full bg-black/50 border border-white/20 text-white hover:text-orange-400 hover:border-orange-400/50 transition"
-        aria-label="Previous image"
-      >
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path d="M15 18l-6-6 6-6"/>
-        </svg>
-      </button>
-      <button
-        id="lightbox-next"
-        class="absolute right-4 md:right-6 p-2 rounded-full bg-black/50 border border-white/20 text-white hover:text-orange-400 hover:border-orange-400/50 transition"
-        aria-label="Next image"
-      >
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path d="M9 18l6-6-6-6"/>
-        </svg>
-      </button>
-      <img id="lightbox-img" src="" alt="" draggable="false" class="max-w-full max-h-[85vh] object-contain rounded-lg"/>
+
+      <!-- Next -->
+      <a href={`/work/${next.slug}`} class="next-project group">
+        <span class="next-label font-mono">Next project</span>
+        <span class="next-title font-display">{next.title}</span>
+        <span class="next-tagline">{next.tagline}</span>
+        <span class="next-arrow" aria-hidden="true">&rarr;</span>
+      </a>
     </div>
-  </dialog>
-  
+  </main>
+
   <Footer />
-  <BookingModal />
 </BaseLayout>
 
-<script>
-  const initGallery = () => {
-    const thumbs = Array.from(document.querySelectorAll('.gallery-thumb')) as HTMLButtonElement[];
-    const lightbox = document.getElementById('lightbox') as HTMLDialogElement;
-    const lightboxImg = document.getElementById('lightbox-img') as HTMLImageElement;
-    const lightboxStage = document.getElementById('lightbox-stage');
-    const closeBtn = document.getElementById('lightbox-close');
-    const prevBtn = document.getElementById('lightbox-prev') as HTMLButtonElement | null;
-    const nextBtn = document.getElementById('lightbox-next') as HTMLButtonElement | null;
-    
-    if (!lightbox || !lightboxImg) return;
-    if (lightbox.dataset.galleryBound === 'true') return;
+<style>
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    font-size: 0.88rem;
+    color: rgb(var(--muted));
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
 
-    lightbox.dataset.galleryBound = 'true';
+  .back-link:hover {
+    color: rgb(var(--accent));
+  }
 
-    const galleryImages = thumbs
-      .map((thumb) => thumb.querySelector('img'))
-      .filter((img): img is HTMLImageElement => Boolean(img))
-      .map((img) => ({ src: img.src, alt: img.alt }));
+  .back-link svg {
+    transition: transform 0.2s ease;
+  }
 
-    if (!galleryImages.length) return;
+  .back-link:hover svg {
+    transform: translateX(-3px);
+  }
 
-    let currentIndex = 0;
+  /* Header */
+  .cs-head {
+    max-width: 48rem;
+    margin-bottom: 2.5rem;
+  }
 
-    const renderLightboxImage = () => {
-      const current = galleryImages[currentIndex];
-      if (!current) return;
-      lightboxImg.src = current.src;
-      lightboxImg.alt = current.alt;
-    };
+  .cs-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgb(var(--muted));
+  }
 
-    const goToPrevious = (e?: Event) => {
-      e?.stopPropagation();
-      currentIndex = (currentIndex - 1 + galleryImages.length) % galleryImages.length;
-      renderLightboxImage();
-    };
+  .status {
+    padding: 0.22rem 0.6rem;
+    border-radius: var(--radius-full);
+    border: 1px solid currentColor;
+  }
 
-    const goToNext = (e?: Event) => {
-      e?.stopPropagation();
-      currentIndex = (currentIndex + 1) % galleryImages.length;
-      renderLightboxImage();
-    };
+  .status-shipped {
+    color: rgb(74 222 128);
+  }
+  .status-active {
+    color: rgb(var(--accent));
+  }
+  .status-building {
+    color: rgb(var(--muted));
+  }
 
-    const handleLightboxKeydown = (e: KeyboardEvent) => {
-      if (!lightbox.open) return;
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        goToPrevious();
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        goToNext();
-      } else if (e.key === 'Escape') {
-        lightbox.close();
-      }
-    };
+  .cs-title {
+    margin: 0 0 0.9rem;
+    font-size: var(--step-4);
+    line-height: 1.06;
+    color: rgb(var(--text));
+  }
 
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let hasTouchStart = false;
+  .cs-tagline {
+    margin: 0 0 1.75rem;
+    max-width: 54ch;
+    font-size: var(--step-1);
+    font-weight: 300;
+    line-height: 1.6;
+    color: rgb(var(--text) / 0.75);
+  }
 
-    const handleTouchStart = (e: TouchEvent) => {
-      if (!lightbox.open || e.touches.length !== 1) return;
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
-      hasTouchStart = true;
-    };
+  .cs-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
 
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (!lightbox.open || !hasTouchStart || e.changedTouches.length !== 1) return;
-      const endX = e.changedTouches[0].clientX;
-      const endY = e.changedTouches[0].clientY;
-      const deltaX = endX - touchStartX;
-      const deltaY = endY - touchStartY;
-      const absX = Math.abs(deltaX);
-      const absY = Math.abs(deltaY);
-      hasTouchStart = false;
+  .cs-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.35rem;
+    border-radius: var(--radius-full);
+    border: 1px solid rgb(var(--border) / 0.18);
+    background: rgb(var(--panel));
+    color: rgb(var(--text));
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition:
+      border-color 0.2s ease,
+      color 0.2s ease;
+  }
 
-      // Horizontal swipe with vertical restraint.
-      if (absX > 40 && absY < 80) {
-        if (deltaX > 0) {
-          goToPrevious();
-        } else {
-          goToNext();
-        }
-      }
-    };
-    
-    thumbs.forEach((thumb) => {
-      thumb.addEventListener('click', () => {
-        const index = Number(thumb.dataset.index);
-        currentIndex = Number.isNaN(index) ? 0 : index;
-        renderLightboxImage();
-        lightbox.showModal();
-      });
-    });
-    
-    closeBtn?.addEventListener('click', () => lightbox.close());
-    prevBtn?.addEventListener('click', goToPrevious);
-    nextBtn?.addEventListener('click', goToNext);
-    lightboxStage?.addEventListener('touchstart', handleTouchStart, { passive: true });
-    lightboxStage?.addEventListener('touchend', handleTouchEnd, { passive: true });
-    document.addEventListener('keydown', handleLightboxKeydown);
+  .cs-link:hover {
+    border-color: rgb(var(--accent) / 0.5);
+    color: rgb(var(--accent));
+  }
 
-    lightbox.addEventListener('click', (e) => {
-      if (e.target === lightbox) lightbox.close();
-    });
-  };
-  
-  document.addEventListener('DOMContentLoaded', initGallery);
-  document.addEventListener('astro:page-load', initGallery);
-</script>
+  .cs-link.primary {
+    background: rgb(var(--accent));
+    border-color: rgb(var(--accent));
+    color: rgb(var(--bg));
+  }
+
+  :global(html[data-theme="light"]) .cs-link.primary {
+    color: #fff;
+  }
+
+  .cs-link.primary:hover {
+    color: rgb(var(--bg));
+    filter: brightness(1.1);
+  }
+
+  :global(html[data-theme="light"]) .cs-link.primary:hover {
+    color: #fff;
+  }
+
+  .cs-nolink {
+    margin: 0;
+    font-size: 0.88rem;
+    color: rgb(var(--muted));
+    font-style: italic;
+  }
+
+  /* Cover */
+  .cs-cover {
+    aspect-ratio: 21 / 9;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    border: 1px solid rgb(var(--border) / 0.1);
+    margin-bottom: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  @media (max-width: 640px) {
+    .cs-cover {
+      aspect-ratio: 16 / 10;
+    }
+  }
+
+  /* Body */
+  .cs-body {
+    display: grid;
+    gap: clamp(2rem, 4vw, 4rem);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 17rem);
+    align-items: start;
+  }
+
+  @media (max-width: 900px) {
+    .cs-body {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .cs-prose section {
+    margin-bottom: 2.75rem;
+  }
+
+  .cs-h2 {
+    margin: 0 0 1rem;
+    font-family: var(--font-display);
+    font-size: var(--step-1);
+    font-weight: 700;
+    color: rgb(var(--text));
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid rgb(var(--border) / 0.1);
+  }
+
+  .cs-prose p {
+    margin: 0 0 1.1rem;
+    max-width: 68ch;
+    font-size: var(--step-0);
+    font-weight: 300;
+    line-height: 1.78;
+    color: rgb(var(--text) / 0.82);
+  }
+
+  .cs-note {
+    padding: 1rem 1.25rem;
+    border-left: 2px solid rgb(var(--accent) / 0.5);
+    background: rgb(var(--panel) / 0.6);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  }
+
+  .cs-list {
+    display: grid;
+    gap: 0.85rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-width: 68ch;
+  }
+
+  .cs-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    font-size: 0.95rem;
+    font-weight: 300;
+    line-height: 1.6;
+    color: rgb(var(--text) / 0.82);
+  }
+
+  .cs-list svg {
+    flex-shrink: 0;
+    margin-top: 0.25rem;
+    color: rgb(var(--accent));
+  }
+
+  /* Sidebar */
+  .cs-aside {
+    display: grid;
+    gap: 1.5rem;
+    position: sticky;
+    top: 6rem;
+  }
+
+  @media (max-width: 900px) {
+    .cs-aside {
+      position: static;
+    }
+  }
+
+  .aside-block {
+    padding: 1.15rem 1.25rem;
+    border-radius: var(--radius-lg);
+    background: rgb(var(--panel));
+    border: 1px solid rgb(var(--border) / 0.1);
+  }
+
+  .aside-label {
+    margin: 0 0 0.7rem;
+    font-family: var(--font-body);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgb(var(--accent));
+  }
+
+  .aside-text {
+    margin: 0;
+    font-size: 0.88rem;
+    font-weight: 300;
+    line-height: 1.6;
+    color: rgb(var(--text) / 0.8);
+  }
+
+  .aside-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .aside-tags li {
+    padding: 0.28rem 0.6rem;
+    border-radius: var(--radius-sm);
+    background: rgb(var(--panel2));
+    border: 1px solid rgb(var(--border) / 0.08);
+    font-size: 0.75rem;
+    color: rgb(var(--text) / 0.75);
+  }
+
+  .aside-tags a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .aside-tags a:hover {
+    color: rgb(var(--accent));
+  }
+
+  /* Next */
+  .next-project {
+    position: relative;
+    display: block;
+    margin-top: clamp(3rem, 6vw, 5rem);
+    padding: clamp(1.75rem, 4vw, 2.5rem);
+    border-radius: var(--radius-xl);
+    background: rgb(var(--panel));
+    border: 1px solid rgb(var(--border) / 0.1);
+    text-decoration: none;
+    transition: border-color 0.25s ease;
+  }
+
+  .next-project:hover {
+    border-color: rgb(var(--accent) / 0.45);
+  }
+
+  .next-label {
+    display: block;
+    margin-bottom: 0.6rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgb(var(--accent));
+  }
+
+  .next-title {
+    display: block;
+    font-size: var(--step-2);
+    font-weight: 700;
+    color: rgb(var(--text));
+    margin-bottom: 0.4rem;
+  }
+
+  .next-tagline {
+    display: block;
+    max-width: 52ch;
+    font-size: 0.9rem;
+    font-weight: 300;
+    line-height: 1.6;
+    color: rgb(var(--text) / 0.68);
+  }
+
+  .next-arrow {
+    position: absolute;
+    top: 50%;
+    right: clamp(1.75rem, 4vw, 2.5rem);
+    transform: translateY(-50%);
+    font-size: 1.5rem;
+    color: rgb(var(--accent));
+    transition: transform 0.25s ease;
+  }
+
+  .next-project:hover .next-arrow {
+    transform: translateY(-50%) translateX(6px);
+  }
+
+  @media (max-width: 640px) {
+    .next-arrow {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .next-arrow,
+    .back-link svg {
+      transition: none;
+    }
+    .next-project:hover .next-arrow {
+      transform: translateY(-50%);
+    }
+    .back-link:hover svg {
+      transform: none;
+    }
+  }
+</style>

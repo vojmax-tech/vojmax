@@ -2,6 +2,8 @@ import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 const HERO_ORANGE = 0xff7300;
+// --accent in light mode. The dark-mode orange washes out on off-white.
+const HERO_ORANGE_LIGHT = 0xea580c;
 
 export default function ThreeHero() {
   const mountRef = useRef(null);
@@ -48,6 +50,25 @@ export default function ThreeHero() {
     const light = new THREE.PointLight(HERO_ORANGE, 1.8, 100);
     light.position.set(0, 0, 0);
     scene.add(light);
+
+    // Wireframe and inner light track the active theme. Light mode also needs
+    // more opacity: pale orange on off-white barely registers.
+    const applyTheme = () => {
+      const lightTheme =
+        document.documentElement.getAttribute("data-theme") === "light";
+      const color = lightTheme ? HERO_ORANGE_LIGHT : HERO_ORANGE;
+      material.color.setHex(color);
+      material.emissive.setHex(color);
+      material.opacity = lightTheme ? 0.85 : 0.62;
+      light.color.setHex(color);
+    };
+    applyTheme();
+
+    const themeObserver = new MutationObserver(applyTheme);
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
 
     camera.position.z = 4.45;
 
@@ -135,6 +156,7 @@ export default function ThreeHero() {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("automation-change", onAutomationChange);
       resizeObserver.disconnect();
+      themeObserver.disconnect();
 
       if (mountRef.current && renderer.domElement) {
         mountRef.current.removeChild(renderer.domElement);

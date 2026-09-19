@@ -1,16 +1,18 @@
 ---
-// VOID MODE: Dark-only high-ticket aesthetic
 import "../styles/global.css";
+import { SITE } from "../data/site";
 
 interface Props {
   title?: string;
   description?: string;
 }
 
-const { 
-  title = "P. James | AI Brand Technologist",
-  description = "AI Systems Architect & Brand Strategist based in Ibadan. Identity systems, landing pages, and revenue automation."
+const {
+  title = `${SITE.handle} | ${SITE.name}`,
+  description = SITE.description,
 } = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, SITE.url).href;
 ---
 
 <!doctype html>
@@ -30,15 +32,33 @@ const {
       rel="stylesheet"
     />
     
+    <link rel="canonical" href={canonical} />
+
     <!-- Open Graph -->
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="/hero-ai.png" />
-    
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL("/hero-ai.png", SITE.url).href} />
+
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    
+
+    <script
+      type="application/ld+json"
+      is:inline
+      set:html={JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Person",
+        name: SITE.name,
+        alternateName: SITE.handle,
+        jobTitle: SITE.role,
+        url: SITE.url,
+        address: { "@type": "PostalAddress", addressLocality: "Ibadan", addressCountry: "NG" },
+      })}
+    />
+
     <!-- Theme Management Script -->
     <script is:inline>
       const THEME_KEY = "theme";
@@ -99,41 +119,10 @@ const {
       };
     </script>
     
-    <!-- Cal.com Embed Script -->
-    <script is:inline>
-      (function (C, A, L) { 
-        let p = function (a, ar) { a.q.push(ar); }; 
-        let d = C.document; 
-        C.Cal = C.Cal || function () { 
-          let cal = C.Cal; 
-          let ar = arguments; 
-          if (!cal.loaded) { 
-            cal.ns = {}; 
-            cal.q = cal.q || []; 
-            d.head.appendChild(d.createElement("script")).src = A; 
-            cal.loaded = true; 
-          } 
-          if (ar[0] === L) { 
-            const api = function () { p(api, arguments); }; 
-            const namespace = ar[1]; 
-            api.q = api.q || []; 
-            typeof namespace === "string" ? (cal.ns[namespace] = api) && p(api, ar) : p(cal, ar); 
-            return; 
-          } 
-          p(cal, ar); 
-        }; 
-      })(window, "https://app.cal.com/embed/embed.js", "init");
-      
-      Cal("init", { origin: "https://cal.com" });
-    </script>
   </head>
   <body class="bg-bg text-text">
-    <!-- Premium Background Effects -->
-    <div class="bg-sheen-container">
-      <div class="bg-moving-gradient"></div>
-      <div class="stagelight"></div>
-      <div class="ambient-glow"></div>
-    </div>
+    <!-- Ambient backdrop: one slow-drifting accent wash, nothing else. -->
+    <div class="bg-ambient" aria-hidden="true"></div>
 
     <slot />
     <script>
@@ -187,97 +176,6 @@ const {
       document.addEventListener('DOMContentLoaded', initReveal);
       document.addEventListener('astro:page-load', initReveal);
 
-      // ================================================
-      // GLOBAL NERVE CENTER: Event Delegation for Booking
-      // Any element with class "action-book" triggers booking modal
-      // ================================================
-      // ================================================
-      // GLOBAL NERVE CENTER: Event Delegation for Booking
-      // Any element with class "action-book" triggers booking modal
-      // ================================================
-      const initGlobalActions = () => {
-        document.addEventListener('click', (e: MouseEvent) => {
-          const target = e.target as HTMLElement;
-          const bookingTrigger = target.closest('.action-book');
-          
-          if (bookingTrigger) {
-            e.preventDefault();
-            
-            // Extract Data Context
-            const packageName = bookingTrigger.getAttribute('data-package');
-            const packagePrice = bookingTrigger.getAttribute('data-price');
-            const packageFeaturesRaw = bookingTrigger.getAttribute('data-features');
-            
-            // Get Form Elements (Scoped to Modal)
-            const modal = document.getElementById('booking-modal');
-            if (modal) {
-              const orderSummary = modal.querySelector('.order-summary');
-              const summaryText = modal.querySelector('.summary-text');
-              const projectNeedInput = modal.querySelector('.project-need-input') as HTMLInputElement;
-              const hiddenPriceInput = modal.querySelector('.hidden-price') as HTMLInputElement;
-              const detailsInput = modal.querySelector('textarea[name="details"]') as HTMLTextAreaElement;
-              
-              // Context Injection Logic
-              if (packageName && projectNeedInput) {
-                // CASE: Pricing Button Clicked
-                modal.dataset.context = 'pricing';
-                
-                if (orderSummary && summaryText) {
-                  orderSummary.classList.remove('hidden');
-                  summaryText.textContent = packagePrice ? `${packageName} (${packagePrice})` : packageName;
-                }
-                
-                projectNeedInput.value = packageName;
-                projectNeedInput.readOnly = true;
-                
-                if (detailsInput) {
-                   // Pre-fill details deeply
-                   let detailsText = packagePrice 
-                     ? `I'm interested in the ${packageName} package (${packagePrice}).` 
-                     : `I'm interested in the ${packageName}.`;
-                   
-                   // Append features if available
-                   if (packageFeaturesRaw) {
-                     const features = packageFeaturesRaw.split('|');
-                     if (features.length > 0) {
-                       detailsText += `\n\nIncludes:\n- ${features.join('\n- ')}`;
-                     }
-                   }
-
-                   detailsInput.value = detailsText;
-                }
-                
-                if (hiddenPriceInput && packagePrice) {
-                  hiddenPriceInput.value = packagePrice;
-                }
-                
-                // Optional: Notify Dane
-                window.dispatchEvent(new CustomEvent('booking-context-update', { 
-                  detail: { package: packageName, price: packagePrice } 
-                }));
-                
-              } else if (projectNeedInput) {
-                // CASE: Generic Contact Click (Clean Slate)
-                modal.dataset.context = 'generic';
-                
-                if (orderSummary) orderSummary.classList.add('hidden');
-                
-                projectNeedInput.value = '';
-                projectNeedInput.readOnly = false;
-                if (hiddenPriceInput) hiddenPriceInput.value = '';
-                if (detailsInput) detailsInput.value = '';
-              }
-            }
-
-
-            // Open Modal
-            window.dispatchEvent(new CustomEvent('open-booking-modal'));
-          }
-        });
-      };
-
-      // Run once on initial load
-      initGlobalActions();
     </script>
   </body>
 </html>

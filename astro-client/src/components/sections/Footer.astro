@@ -1,33 +1,98 @@
 ---
 import SocialLinks from "../ui/SocialLinks.astro";
+import { SITE } from "../../data/site";
+
+const year = new Date().getFullYear();
 ---
 
-<footer class="border-t soft-border bg-[rgb(var(--panel)/0.3)] backdrop-blur-md pt-12 pb-24 md:py-12 mt-auto">
+<footer class="site-footer">
   <div class="container-fluid">
-    <div class="flex flex-col md:flex-row justify-between items-center gap-8 px-4 md:px-0">
-      
-      <!-- Brand & Copyright -->
-      <div class="text-center md:text-left">
-        <h4 class="font-display font-bold text-xl text-text mb-2">P. JAMES</h4>
-        <p class="text-xs text-muted">
-          © 2026. All rights reserved.
-        </p>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a href="/" class="wordmark font-display">vojmax</a>
+        <p class="footer-name">{SITE.name} &middot; {SITE.location}</p>
+        <p class="footer-copy">&copy; {year}</p>
       </div>
 
-      <!-- Useful Links -->
-      <div class="flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm font-medium text-muted">
-        <a href="/" class="hover:text-orange-500 transition-colors">Home</a>
-        <a href="/work" class="hover:text-orange-500 transition-colors">Work</a>
-        <a href="/pricing" class="hover:text-orange-500 transition-colors">Pricing</a>
-        <a href="/about" class="hover:text-orange-500 transition-colors">About</a>
-        <a href="/privacy" class="hover:text-orange-500 transition-colors">Privacy</a>
-      </div>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="/">Home</a>
+        <a href="/work">Work</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+      </nav>
 
-      <!-- Social Links -->
-      <div>
+      <div class="footer-social">
         <SocialLinks />
       </div>
-
     </div>
   </div>
 </footer>
+
+<style>
+  .site-footer {
+    margin-top: auto;
+    border-top: 1px solid rgb(var(--border) / 0.1);
+    background: rgb(var(--panel) / 0.3);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding-block: 3rem;
+  }
+
+  .footer-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+
+  @media (max-width: 767px) {
+    .footer-inner {
+      flex-direction: column;
+      text-align: center;
+    }
+  }
+
+  .wordmark {
+    display: inline-block;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: rgb(var(--text));
+    text-decoration: none;
+  }
+
+  .wordmark:hover {
+    color: rgb(var(--accent));
+  }
+
+  .footer-name {
+    margin: 0.4rem 0 0.15rem;
+    font-size: 0.82rem;
+    color: rgb(var(--text) / 0.6);
+  }
+
+  .footer-copy {
+    margin: 0;
+    font-size: 0.75rem;
+    color: rgb(var(--muted));
+  }
+
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem;
+    font-size: 0.88rem;
+  }
+
+  .footer-links a {
+    color: rgb(var(--text) / 0.7);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .footer-links a:hover {
+    color: rgb(var(--accent));
+  }
+</style>

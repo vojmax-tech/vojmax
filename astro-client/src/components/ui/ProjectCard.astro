@@ -1,88 +1,201 @@
 ---
-// ProjectCard UI component - Links to case study pages (not modal)
-interface Props {
-  title: string;
-  category: string;
-  year: string;
-  badge?: string;
-  image: string;
-  description: string;
-  tools: string[];
-  details: string;
-  gallery: string[];
-  link: string;
-  slug: string;
-}
+import ProjectCover from "./ProjectCover.astro";
+import type { Project } from "../../data/projects";
+import { statusLabels } from "../../data/projects";
+import fs from "node:fs";
+import path from "node:path";
 
-const { title, category, year, badge = "CONCEPT", image, description, slug } = Astro.props;
+type Props = Project;
+
+const { slug, title, tagline, category, stack, status, year, hue } = Astro.props;
+
+const coverPath = path.join(process.cwd(), "public", "projects", `${slug}-main.png`);
+const hasCover = fs.existsSync(coverPath);
+const src = hasCover ? `/projects/${slug}-main.png` : undefined;
 ---
 
 <a
   href={`/work/${slug}`}
-  class="project-card group relative block aspect-[4/5] overflow-hidden rounded-[var(--radius-lg)] bg-panel border border-[rgb(var(--border)/0.1)] hover:border-[rgb(var(--accent)/0.5)] transition-all duration-300 cursor-pointer shadow-lg hover:shadow-xl"
+  class="project-card group"
+  data-status={status}
+  aria-label={`${title}, case study`}
 >
-  <!-- Image with zoom effect -->
-  <div class="absolute inset-0 overflow-hidden">
-    <img
-      src={image}
-      alt={title}
-      class="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-      loading="lazy"
-    />
-  </div>
-  
-  <!-- Gradient overlay - Darker in dark mode, more subtle in light mode -->
-  <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10"></div>
-  
-  <!-- Technical Badge -->
-  <div class="absolute top-4 left-4 z-20">
-    <span class="inline-flex items-center gap-1 px-2 py-1 rounded border border-[rgb(var(--border)/0.2)] bg-panel/95">
-      <span class="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>
-      <span class="font-mono text-[10px] uppercase tracking-wider text-muted group-hover:text-text transition-colors">
-        {badge} 
-      </span>
+  <div class="card-cover">
+    <ProjectCover title={title} slug={slug} hue={hue} src={src} />
+    <span class={`status-pill status-${status}`}>
+      <span class="status-dot" aria-hidden="true"></span>
+      {statusLabels[status]}
     </span>
   </div>
-  
-  <!-- View indicator -->
-  <div class="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-    <div class="p-2 rounded-full bg-orange-500 text-black shadow-lg">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <path d="M15 3h6v6M10 14L21 3"/>
-      </svg>
-    </div>
-  </div>
-  
-  <!-- Content -->
-  <div class="absolute bottom-0 left-0 right-0 p-6 z-20">
-    <!-- Category Tag -->
-    <p class="text-[10px] uppercase tracking-[0.2em] text-orange-400 font-bold mb-2">
-      {category}
+
+  <div class="card-body">
+    <p class="card-meta font-mono">
+      <span>{category}</span>
+      <span aria-hidden="true">·</span>
+      <span>{year}</span>
     </p>
-    
-    <!-- Title -->
-    <h3 class="font-display font-bold text-xl text-white mb-2 group-hover:text-orange-400 transition-colors">
-      {title}
-    </h3>
-    
-    <!-- Description -->
-    <p class="text-sm text-zinc-300 leading-relaxed line-clamp-2">
-      {description}
-    </p>
+
+    <h3 class="card-title font-display">{title}</h3>
+    <p class="card-tagline">{tagline}</p>
+
+    <ul class="card-stack" aria-label="Stack">
+      {stack.slice(0, 4).map((tech) => <li>{tech}</li>)}
+      {stack.length > 4 && <li class="more">+{stack.length - 4}</li>}
+    </ul>
   </div>
 </a>
 
 <style>
-  .project-card:focus-visible {
-    outline: 2px solid rgb(249, 115, 22);
-    outline-offset: 2px;
-  }
-  
-  /* Line clamp for description */
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+  .project-card {
+    container-type: inline-size;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
+    border-radius: var(--radius-lg);
+    background: rgb(var(--panel));
+    border: 1px solid rgb(var(--border) / 0.1);
+    text-decoration: none;
+    transition:
+      border-color 0.3s ease,
+      transform 0.3s ease,
+      box-shadow 0.3s ease;
+  }
+
+  .project-card:hover {
+    border-color: rgb(var(--accent) / 0.45);
+    transform: translateY(-3px);
+    box-shadow: 0 16px 40px rgb(0 0 0 / 0.18);
+  }
+
+  .project-card:focus-visible {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 3px;
+  }
+
+  .card-cover {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border-bottom: 1px solid rgb(var(--border) / 0.08);
+  }
+
+  .status-pill {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-full);
+    background: rgb(var(--bg) / 0.72);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgb(var(--border) / 0.14);
+    font-size: 0.66rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgb(var(--text) / 0.8);
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .status-active .status-dot {
+    background: rgb(var(--accent));
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+
+  .status-shipped .status-dot {
+    background: rgb(74 222 128);
+  }
+
+  .status-building .status-dot {
+    background: rgb(var(--muted));
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .status-active .status-dot {
+      animation: none;
+    }
+    .project-card:hover {
+      transform: none;
+    }
+  }
+
+  .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding: 1.25rem 1.25rem 1.4rem;
+    flex: 1;
+  }
+
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgb(var(--accent));
+  }
+
+  .card-title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: rgb(var(--text));
+    transition: color 0.2s ease;
+  }
+
+  .project-card:hover .card-title {
+    color: rgb(var(--accent));
+  }
+
+  .card-tagline {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 300;
+    line-height: 1.55;
+    color: rgb(var(--text) / 0.72);
+    flex: 1;
+  }
+
+  .card-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0.35rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .card-stack li {
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius-sm);
+    background: rgb(var(--panel2));
+    border: 1px solid rgb(var(--border) / 0.08);
+    font-size: 0.7rem;
+    color: rgb(var(--text) / 0.66);
+  }
+
+  .card-stack .more {
+    color: rgb(var(--muted));
   }
 </style>

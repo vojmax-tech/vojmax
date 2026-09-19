@@ -1,0 +1,188 @@
+---
+/**
+ * Project cover.
+ *
+ * Cards use a project screenshot or supplied project asset when one exists in
+ * public/projects/<slug>-main.png. The deterministic typographic treatment is
+ * kept as a fallback for new projects that do not have artwork yet.
+ */
+interface Props {
+  title: string;
+  slug: string;
+  hue: number;
+  /** Real screenshot, once one exists. */
+  src?: string;
+  /** Larger type for the case-study hero. */
+  size?: "card" | "hero";
+  class?: string;
+}
+
+const { title, slug, hue, src, size = "card", class: className = "" } = Astro.props;
+
+const initials = title
+  .replace(/[^A-Za-z0-9 &]/g, "")
+  .split(/\s+/)
+  .filter((w) => w && w !== "&" && w !== "and" && w !== "The")
+  .slice(0, 2)
+  .map((w) => w[0].toUpperCase())
+  .join("");
+---
+
+{
+  src ? (
+    <img
+      src={src}
+      alt={title}
+      class={`cover-img ${className}`}
+      loading="lazy"
+      decoding="async"
+    />
+  ) : (
+    <div
+      class={`cover ${size === "hero" ? "cover-hero" : ""} ${className}`}
+      style={`--h: ${hue};`}
+      role="img"
+      aria-label={`${title} cover`}
+    >
+      <div class="cover-grid" aria-hidden="true" />
+      <!-- SVG Noise Filter for premium texture -->
+      <svg class="noise-filter" aria-hidden="true">
+        <filter id="noise">
+          <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+          <feColorMatrix type="matrix" values="1 0 0 0 0, 0 1 0 0 0, 0 0 1 0 0, 0 0 0 0.15 0" />
+        </filter>
+        <rect width="100%" height="100%" filter="url(#noise)"></rect>
+      </svg>
+      <div class="cover-bloom" aria-hidden="true" />
+      <span class="cover-initials" aria-hidden="true">
+        {initials}
+      </span>
+      <span class="cover-slug font-mono" aria-hidden="true">
+        {slug}
+      </span>
+    </div>
+  )
+}
+
+<style>
+  .noise-filter {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.4;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .cover-img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+  }
+
+  .cover {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(
+        100% 100% at 15% 10%,
+        hsl(var(--h) 82% 56% / 0.6),
+        transparent 60%
+      ),
+      radial-gradient(
+        120% 120% at 85% 90%,
+        hsl(calc(var(--h) + 40) 88% 46% / 0.5),
+        transparent 65%
+      ),
+      radial-gradient(
+        100% 100% at 50% 50%,
+        hsl(calc(var(--h) + 20) 70% 30% / 0.2),
+        transparent 50%
+      ),
+      linear-gradient(135deg, rgb(var(--panel2)), rgb(var(--bg)));
+  }
+
+  :global([data-theme="light"]) .cover {
+    background:
+      radial-gradient(
+        100% 100% at 15% 10%,
+        hsl(var(--h) 80% 72% / 0.55),
+        transparent 60%
+      ),
+      radial-gradient(
+        120% 120% at 85% 90%,
+        hsl(calc(var(--h) + 40) 86% 66% / 0.45),
+        transparent 65%
+      ),
+      radial-gradient(
+        100% 100% at 50% 50%,
+        hsl(calc(var(--h) + 20) 70% 80% / 0.3),
+        transparent 50%
+      ),
+      linear-gradient(135deg, rgb(var(--panel)), rgb(var(--panel2)));
+  }
+
+  /* Faint engineering grid, so the gradient reads as a surface not a blur. */
+  .cover-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgb(var(--border) / 0.09) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--border) / 0.09) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(100% 100% at 50% 50%, #000 45%, transparent 95%);
+    z-index: 0;
+  }
+
+  .cover-bloom {
+    position: absolute;
+    inset: -20%;
+    background: radial-gradient(
+      closest-side,
+      hsl(var(--h) 85% 60% / 0.2),
+      transparent
+    );
+    filter: blur(40px);
+    opacity: 0;
+    transition: opacity 0.45s ease;
+  }
+
+  :global(.project-card:hover) .cover-bloom {
+    opacity: 1;
+  }
+
+  .cover-initials {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(3rem, 18cqw, 6rem);
+    line-height: 1;
+    letter-spacing: -0.06em;
+    color: rgb(var(--text) / 0.13);
+    user-select: none;
+  }
+
+  .cover-hero .cover-initials {
+    font-size: clamp(4rem, 12vw, 9rem);
+  }
+
+  .cover-slug {
+    position: absolute;
+    left: 1rem;
+    bottom: 0.85rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgb(var(--text) / 0.35);
+  }
+
+  .cover-hero .cover-slug {
+    left: 1.5rem;
+    bottom: 1.25rem;
+    font-size: 0.75rem;
+  }
+</style>

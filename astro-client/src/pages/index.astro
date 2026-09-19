@@ -1,52 +1,23 @@
 ---
-// Main landing page - assembles all components
-// ARCHITECTURE: "Money Magnet" Conversion Funnel
-// COLOR PROTOCOL: "Void & Ember" (Black + Orange)
 import BaseLayout from "../layouts/BaseLayout.astro";
 
-// Layout components
 import Navbar from "../components/layout/Navbar.astro";
-import ChatBot from "../components/chat/ChatBot.tsx";
-
-// Section components
 import Hero from "../components/sections/Hero.astro";
-import TheShift from "../components/sections/TheShift.astro";
-import Services from "../components/sections/Services.astro";
 import Work from "../components/sections/Work.astro";
-import Infrastructure from "../components/sections/Infrastructure.astro";
-import QuoteParallax from "../components/sections/QuoteParallax.astro";
-import Process from "../components/sections/Process.astro";
-import FAQ from "../components/sections/FAQ.astro";
+import Stack from "../components/sections/Stack.astro";
 import Contact from "../components/sections/Contact.astro";
 import Footer from "../components/sections/Footer.astro";
-
-// Modal components
-import BookingModal from "../components/modals/BookingModal.astro";
 ---
 
 <BaseLayout>
-  <!-- Navigation -->
   <Navbar />
 
-  <!-- Main Content -->
   <main>
     <Hero />
-    <TheShift />
-    <Services />
     <Work />
-    <Infrastructure />
-    <QuoteParallax />
-    <Process />
-    <FAQ />
+    <Stack />
     <Contact />
   </main>
 
-  <!-- Footer -->
   <Footer />
-
-  <!-- Modals -->
-  <BookingModal />
-
-  <!-- Floating Widgets -->
-  <ChatBot client:only="react" />
 </BaseLayout>

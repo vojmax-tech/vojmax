@@ -2,36 +2,16 @@
 import { defineConfig } from "astro/config";
 
 import tailwindcss from "@tailwindcss/vite";
-import solidJs from "@astrojs/solid-js";
 import vercel from "@astrojs/vercel";
-
 import react from "@astrojs/react";
 
-// https://astro.build/config
+// Fully static: the site has no API routes and the case studies are prerendered.
 export default defineConfig({
-  output: "server", // Enable server-side rendering for API routes
+  output: "static",
+  site: "https://vojmax.dev",
   vite: {
     plugins: [tailwindcss()],
   },
-
-  integrations: [
-    solidJs({
-      // Exclude React components from Solid.js processing
-      exclude: [
-        "**/src/components/ui/ThreeHero.jsx",
-        "**/src/components/chat/**",
-        "**/src/components/sections/Services/**",
-        "**/src/components/pricing/**",
-      ],
-    }),
-    react({
-      include: [
-        "**/src/components/ui/ThreeHero.jsx",
-        "**/src/components/chat/**",
-        "**/src/components/sections/Services/**",
-        "**/src/components/pricing/**",
-      ],
-    }),
-  ],
+  integrations: [react()],
   adapter: vercel(),
 });

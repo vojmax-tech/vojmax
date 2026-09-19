@@ -1,57 +1,33 @@
 ---
-// Hero section - Refactored for proper alignment and clean CSS
-interface FeatureCard {
-  title: string;
-  description: string;
-}
-
-const features: FeatureCard[] = [
-  { title: "Authority Command", description: "Position yourself as the high-ticket prize." },
-  { title: "Velocity Pipelines", description: "Systems that capture, qualify, and convert leads instantly." },
-  { title: "Zero-Touch Closing", description: "AI infrastructure that nurtures and sells 24/7." },
-];
-
-const whatsappNumber = "2347033302085"; // Added if needed components
+// Hero section.
 import ThreeHero from "../ui/ThreeHero.jsx";
 ---
 
 <header id="top" class="hero-section">
-  <!-- Background Image - Heavily Faded -->
-  <div class="background-layer hidden"></div>
-
-  <!-- Main Grid Container -->
   <div class="container-fluid hero-grid">
-    
-    <!-- Left Column: Content -->
+    <!-- Left: intro -->
     <div class="hero-content">
-      <!-- Headline (Resend-Style One Liner) -->
       <h1 class="hero-headline">
-        <span class="text-accent architect-glow">Scale </span> without friction.
+        I design it, then <span class="text-accent architect-glow">I build it</span>.
       </h1>
-      
-      <!-- Description -->
+
       <p class="hero-description">
-        Build high-yield systems that save cost & time with design, code and AI automation. Operate 10x faster and turn traffic into scalable revenue.
+        Design gets handed to engineering and something is always lost in
+        between: spacing drifts, motion disappears, the feel goes flat. I'm
+        <strong>Victor</strong>. I take a project from the name and the logo
+        through to the deployed site, so there's no handoff to lose it in.
       </p>
-      
-      <!-- CTAs -->
+
       <div class="hero-actions">
-        <button
-          class="btn-primary-custom group action-book"
-        >
-          <span class="relative z-10">Get Started</span>
+        <a href="#work" class="btn-primary-custom group">
+          <span class="relative z-10">See the work</span>
           <div class="btn-hover-overlay"></div>
-        </button>
-        <a
-          href="#work"
-          class="btn-secondary-custom"
-        >
-          See Frameworks
         </a>
+        <a href="/contact" class="btn-secondary-custom"> Get in touch </a>
       </div>
     </div>
-    
-    <!-- Right Column: 3D Element Container -->
+
+    <!-- Right: 3D element -->
     <div class="hero-3d-container">
       <ThreeHero client:only="react" />
     </div>
@@ -76,32 +52,6 @@ import ThreeHero from "../ui/ThreeHero.jsx";
       min-height: auto;
     padding-block: 6rem 2rem;
     }
-  }
-
-  /* Background */
-  .background-layer {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-  }
-
-  .hero-bg-img {
-    height: 100%;
-    width: 100%;
-    object-fit: cover;
-    opacity: 0.3;
-  }
-
-  .bg-radial {
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse at center, transparent 30%, rgb(var(--bg)) 85%);
-  }
-
-  .bg-fade-bottom {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to top, rgb(var(--bg)) 0%, transparent 30%);
   }
 
   /* Grid Layout (Aligns with Global Container) */
@@ -159,6 +109,23 @@ import ThreeHero from "../ui/ThreeHero.jsx";
       radial-gradient(circle at 34% 30%, rgb(var(--accent) / 0.2), transparent 56%),
       radial-gradient(circle at 68% 65%, rgb(var(--accent2) / 0.16), transparent 62%);
     filter: blur(24px);
+  }
+
+  /* Light mode needs the halo to spill PAST the wireframe, not sit inside it.
+     Confined to the silhouette it reads as a stain behind glass, because the
+     canvas is transparent and the sphere interior is empty. Wider spread and a
+     much larger blur let it read as light, so the alpha can come back down. */
+  :global(html[data-theme="light"]) .hero-3d-container::before {
+    inset: -8%;
+    background:
+      radial-gradient(circle at 48% 44%, rgb(var(--accent) / 0.26), transparent 66%),
+      radial-gradient(circle at 62% 64%, rgb(var(--accent2) / 0.2), transparent 70%);
+    filter: blur(58px);
+  }
+
+  .hero-description strong {
+    font-weight: 600;
+    color: rgb(var(--text));
   }
 
   /* Components */
@@ -251,38 +218,6 @@ import ThreeHero from "../ui/ThreeHero.jsx";
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   }
 
-  /* Cards */
-  .feature-card {
-    padding: 1.25rem 1.5rem;
-    border-radius: var(--radius-md, 12px);
-    background: rgb(var(--panel) / 0.9);
-    border: 1px solid rgb(var(--border) / 0.12);
-    transition: all 0.2s ease-out;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  }
-
-  .feature-card:hover {
-    border-color: rgb(var(--accent) / 0.4);
-    background: rgb(var(--panel));
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  }
-
-  .feature-title {
-    font-weight: 500;
-    font-size: 1rem; /* Smaller title */
-    color: rgb(var(--text));
-    transition: color 0.3s;
-    margin-bottom: 0.3rem;
-  }
-
-  .feature-desc {
-  font-size: 0.85rem; /* Smaller desc */
-  color: rgb(var(--text) / 0.8); /* Increased opacity */
-  line-height: 1.4;
-  font-weight: 400; /* Increased weight */
-}
-
   /* ========================================
      MOBILE RESPONSIVE (< 768px)
      ======================================== */
@@ -344,17 +279,6 @@ import ThreeHero from "../ui/ThreeHero.jsx";
       margin-bottom: 0.35rem;
     }
 
-    .hero-features {
-      display: none;
-    }
-
-    .feature-title {
-      font-size: 0.9rem;
-    }
-
-    .feature-desc {
-      font-size: 0.8rem;
-    }
   }
 
   /* Tablet (768px - 1023px) */
@@ -384,10 +308,6 @@ import ThreeHero from "../ui/ThreeHero.jsx";
       margin-inline: auto;
     }
 
-    .hero-features {
-      max-width: 500px;
-      margin-inline: auto;
-    }
   }
 </style>
 

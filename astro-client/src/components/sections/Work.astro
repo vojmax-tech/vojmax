@@ -1,40 +1,94 @@
 ---
-// Work section - System Architectures / Solutions Gallery
-// Links to dedicated case study pages (no modal)
 import ProjectCard from "../ui/ProjectCard.astro";
-import { projects } from "../../data/projects";
-
-const featuredProjectOrder = ["realty-os", "authority-protocol", "center-onyx"];
-const featuredProjects = featuredProjectOrder
-  .map((slug) => projects.find((project) => project.slug === slug))
-  .filter((project): project is (typeof projects)[number] => Boolean(project));
+import { featuredProjects, projects } from "../../data/projects";
 ---
 
-<section id="work" class="py-36 container-fluid">
-  <div class="mb-8">
-    <p class="text-[var(--step--1)] uppercase tracking-[0.25em] text-orange-400 font-bold mb-3">
-      Designing the System
-    </p>
-    <h2 class="font-display font-bold text-[var(--step-3)] leading-[1.1] max-w-[28ch] text-text">
-      Engineered solutions for serious operators.
+<section id="work" class="py-24 md:py-32 container-fluid">
+  <div class="section-head">
+    <h2 class="section-title font-display">
+      Things I've built, and what they do.
     </h2>
+    <p class="section-lede">
+      Every project below has a repository behind it. The ones still in progress
+      say so on the card.
+    </p>
   </div>
 
-  <div class="grid gap-6 [grid-template-columns:repeat(auto-fit,minmax(min(20rem,100%),1fr))]">
-    {featuredProjects.map((project) => (
-      <ProjectCard {...project} />
-    ))}
+  <div class="project-grid">
+    {featuredProjects.map((project) => <ProjectCard {...project} />)}
   </div>
-  
-  <div class="mt-8 md:mt-12 flex justify-center">
-    <a 
-      href="/work" 
-      class="inline-flex items-center gap-2 border border-orange-500/50 text-orange-500 hover:bg-orange-500/10 px-8 py-4 rounded-full uppercase tracking-wider text-sm font-bold transition-all group"
-    >
-      View more Frameworks
-      <span class="group-hover:translate-x-1 transition-transform">&rarr;</span>
+
+  <div class="mt-10 md:mt-14 flex justify-center">
+    <a href="/work" class="view-all group">
+      View all {projects.length} projects
+      <span class="arrow" aria-hidden="true">&rarr;</span>
     </a>
   </div>
-  
-  <div id="work-bottom"></div>
 </section>
+
+<style>
+  .section-head {
+    max-width: 46rem;
+    margin-bottom: clamp(2rem, 4vw, 3rem);
+  }
+
+  .section-title {
+    margin: 0 0 0.9rem;
+    font-size: var(--step-3);
+    line-height: 1.12;
+    color: rgb(var(--text));
+  }
+
+  .section-lede {
+    margin: 0;
+    max-width: 52ch;
+    font-weight: 300;
+    line-height: 1.65;
+    color: rgb(var(--text) / 0.72);
+  }
+
+  .project-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr));
+  }
+
+  .view-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.9rem 1.9rem;
+    border-radius: var(--radius-full);
+    border: 1px solid rgb(var(--accent) / 0.4);
+    color: rgb(var(--accent));
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+    transition:
+      background 0.25s ease,
+      border-color 0.25s ease;
+  }
+
+  .view-all:hover {
+    background: rgb(var(--accent) / 0.1);
+    border-color: rgb(var(--accent) / 0.7);
+  }
+
+  .arrow {
+    transition: transform 0.25s ease;
+  }
+
+  .view-all:hover .arrow {
+    transform: translateX(4px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .arrow {
+      transition: none;
+    }
+    .view-all:hover .arrow {
+      transform: none;
+    }
+  }
+</style>

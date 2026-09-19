@@ -1,28 +1,55 @@
 ---
-// About Page - The Architect
 import BaseLayout from "../layouts/BaseLayout.astro";
+import Navbar from "../components/layout/Navbar.astro";
 import Footer from "../components/sections/Footer.astro";
 import About from "../components/sections/About.astro";
 import Values from "../components/sections/Values.astro";
+import { CONTACT } from "../data/site";
 ---
 
-<BaseLayout title="About | P. James" description="Meet P. James - AI Brand Technologist. Bridging the gap between design and systems engineering.">
+<BaseLayout
+  title="About | vojmax"
+  description="Victor James (vojmax), designer and software engineer in Ibadan, Nigeria."
+>
+  <Navbar alwaysVisible={true} homeSectionLinks={true} />
 
-  <main class="min-h-screen pt-12 pb-16">
+  <main class="min-h-screen pt-24 md:pt-28 pb-16">
     <article class="container-fluid">
-      
-      <a href="/" class="inline-flex items-center gap-2 text-muted hover:text-[rgb(var(--accent))] transition mb-8 group">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="group-hover:-translate-x-1 transition-transform">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-        Back to Home
-      </a>
-
       <About />
       <Values />
 
+      <div class="about-cta">
+        <p>
+          The work is on the <a href="/work">projects page</a>. If you'd rather
+          just talk, <a href={`mailto:${CONTACT.email}`}>email me</a>.
+        </p>
+      </div>
     </article>
   </main>
 
   <Footer />
 </BaseLayout>
+
+<style>
+  .about-cta {
+    padding-top: 2rem;
+    border-top: 1px solid rgb(var(--border) / 0.08);
+  }
+
+  .about-cta p {
+    margin: 0;
+    font-size: var(--step-0);
+    font-weight: 300;
+    color: rgb(var(--text) / 0.75);
+  }
+
+  .about-cta a {
+    color: rgb(var(--accent));
+    text-decoration: none;
+    border-bottom: 1px solid rgb(var(--accent) / 0.35);
+  }
+
+  .about-cta a:hover {
+    border-bottom-color: rgb(var(--accent));
+  }
+</style>

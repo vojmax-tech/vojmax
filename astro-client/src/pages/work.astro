@@ -2,66 +2,246 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Navbar from "../components/layout/Navbar.astro";
 import ProjectCard from "../components/ui/ProjectCard.astro";
-import BookingModal from "../components/modals/BookingModal.astro";
 import Footer from "../components/sections/Footer.astro";
-import { projects } from "../data/projects";
+import { projects, disciplineLabels, groupMeta } from "../data/projects";
+import type { Discipline } from "../data/projects";
+
+// Only offer a filter for disciplines that actually have projects behind them.
+const disciplines = (Object.keys(disciplineLabels) as Discipline[]).filter((d) =>
+  projects.some((p) => p.disciplines.includes(d)),
+);
+
+const counts = Object.fromEntries(
+  disciplines.map((d) => [d, projects.filter((p) => p.disciplines.includes(d)).length]),
+) as Record<Discipline, number>;
+
+// Two groups, each rendered as its own grid. The discipline filter still runs
+// across both, so a group with nothing left in it hides itself.
+const grouped = groupMeta.map((group) => ({
+  ...group,
+  items: projects.filter((p) => p.group === group.id),
+}));
 ---
 
-<BaseLayout title="Work | P. JAMES" description="Full archive of system architectures and deployed frameworks.">
+<BaseLayout
+  title="Work | vojmax"
+  description="Every project Victor James (vojmax) has built: brand and build work for service businesses, and the systems and tooling underneath it."
+>
   <Navbar alwaysVisible={true} homeSectionLinks={true} />
 
   <main class="pt-24 md:pt-28 pb-24 container-fluid min-h-screen">
-    <div class="mb-12">
-       <!-- Back Link <div class="mb-8">
-         <a href="/" class="inline-flex items-center gap-2 text-muted hover:text-accent transition group">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="group-hover:-translate-x-1 transition-transform">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
-          </svg>
-          Back to Home
-        </a>
-       </div>-->
-       
+    <header class="work-head">
+      <h1 class="work-title font-display">Everything, in one place.</h1>
+      <p class="work-lede">
+        Sixteen projects. Eight are brand and build jobs for service businesses:
+        name, type, interface, deployed site. Five are systems work, and three
+        more are in progress and marked as such.
+      </p>
+    </header>
 
-       <h1 class="font-display font-bold text-4xl md:text-6xl text-text mb-6 mt-5">
-         Solutions for scalable revenue
-       </h1>
-       <p class="max-w-2xl text-muted text-lg">
-         A catalog of deployable frameworks, automated pipelines, and brand identity systems engineered for growth.
-       </p>
+    <div class="filters" role="group" aria-label="Filter projects by discipline">
+      <button class="filter is-active" data-filter="all" aria-pressed="true">
+        All <span class="count">{projects.length}</span>
+      </button>
+      {
+        disciplines.map((d) => (
+          <button class="filter" data-filter={d} aria-pressed="false">
+            {disciplineLabels[d]} <span class="count">{counts[d]}</span>
+          </button>
+        ))
+      }
     </div>
 
-    <!-- Scalable Project Grid -->
-    <div class="grid gap-8 md:gap-y-12 [grid-template-columns:repeat(auto-fit,minmax(min(20rem,100%),1fr))] mb-24">
-      {projects.map((project) => (
-        <ProjectCard {...project} />
-      ))}
-    </div>
+    {
+      grouped.map((group) => (
+        <section class="work-group" data-group={group.id}>
+          <div class="section-head group-head">
+            <h2 class="section-title font-display">{group.label}</h2>
+            <p class="section-lede">{group.note}</p>
+          </div>
 
-    <!-- Ready to Build CTA -->
-    <div class="bg-panel border border-[rgb(var(--border)/0.1)] rounded-3xl p-8 md:p-12 text-center relative overflow-hidden group">
-       <!-- Glow / Hover Effect -->
-       <div class="absolute inset-0 bg-gradient-to-r from-orange-500/0 via-orange-500/5 to-orange-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
-       
-       <h2 class="font-display font-bold text-3xl md:text-4xl text-text mb-6 relative z-10">
-        Ready to deploy your own system?
-       </h2>
-       <p class="text-muted max-w-xl mx-auto mb-8 relative z-10">
-        Stop relying on manual inputs. Build an architecture that scales with your ambition.
-       </p>
-       <div class="relative z-10 flex flex-wrap items-center justify-center gap-4">
-         <button class="action-book inline-flex items-center gap-2 bg-panel2/50 soft-border px-4 py-3 outline-none focus:bg-panel focus:border-accent/40 focus:shadow-smld hover:bg-orange-400 rounded-full transition-colors">
-           Start a Project
-           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-         </button>
-         
-         <a href="/pricing" class="inline-flex items-center gap-2 px-8 py-4 rounded-full font-bold text-text border soft-border hover:border-accent hover:text-accent transition-colors bg-panel2 backdrop-blur-sm">
-           View Pricing
-         </a>
-       </div>
-    </div>
+          <div class="project-grid">
+            {group.items.map((project) => (
+              <div class="grid-item" data-disciplines={project.disciplines.join(" ")}>
+                <ProjectCard {...project} />
+              </div>
+            ))}
+          </div>
+        </section>
+      ))
+    }
 
+    <p class="empty-state" id="empty-state" hidden>Nothing in that discipline yet.</p>
   </main>
 
   <Footer />
-  <BookingModal />
 </BaseLayout>
+
+<style>
+  .work-head {
+    max-width: 46rem;
+    margin-bottom: 2rem;
+  }
+
+  .work-title {
+    margin: 0 0 1rem;
+    font-size: var(--step-4);
+    line-height: 1.08;
+    color: rgb(var(--text));
+  }
+
+  .work-lede {
+    margin: 0;
+    max-width: 54ch;
+    font-weight: 300;
+    line-height: 1.65;
+    color: rgb(var(--text) / 0.72);
+  }
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 2.25rem;
+  }
+
+  .filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-full);
+    border: 1px solid rgb(var(--border) / 0.14);
+    background: rgb(var(--panel));
+    color: rgb(var(--text) / 0.75);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+      border-color 0.2s ease,
+      color 0.2s ease,
+      background 0.2s ease;
+  }
+
+  .filter:hover {
+    border-color: rgb(var(--accent) / 0.4);
+    color: rgb(var(--text));
+  }
+
+  .filter.is-active {
+    background: rgb(var(--accent) / 0.12);
+    border-color: rgb(var(--accent) / 0.55);
+    color: rgb(var(--accent));
+  }
+
+  .count {
+    font-size: 0.72rem;
+    opacity: 0.6;
+  }
+
+  .work-group + .work-group {
+    margin-top: clamp(3rem, 6vw, 4.5rem);
+  }
+
+  .work-group[hidden] {
+    display: none;
+  }
+
+  .group-head {
+    max-width: 46rem;
+    margin-bottom: clamp(1.25rem, 2.5vw, 1.75rem);
+  }
+
+  .section-title {
+    margin: 0 0 0.9rem;
+    font-size: var(--step-2);
+    line-height: 1.12;
+    color: rgb(var(--text));
+  }
+
+  .section-lede {
+    margin: 0;
+    max-width: 52ch;
+    font-weight: 300;
+    line-height: 1.65;
+    color: rgb(var(--text) / 0.72);
+  }
+
+  .project-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr));
+  }
+
+  .grid-item[hidden] {
+    display: none;
+  }
+
+  .empty-state {
+    margin-top: 3rem;
+    text-align: center;
+    color: rgb(var(--muted));
+  }
+</style>
+
+<script>
+  const initFilters = () => {
+    const filters = Array.from(
+      document.querySelectorAll<HTMLButtonElement>(".filter"),
+    );
+    const items = Array.from(
+      document.querySelectorAll<HTMLElement>(".grid-item"),
+    );
+    const groups = Array.from(
+      document.querySelectorAll<HTMLElement>(".work-group"),
+    );
+    const empty = document.getElementById("empty-state");
+
+    if (!filters.length || !items.length) return;
+
+    const apply = (value: string) => {
+      let visible = 0;
+
+      items.forEach((item) => {
+        const list = (item.dataset.disciplines ?? "").split(" ");
+        const show = value === "all" || list.includes(value);
+        item.hidden = !show;
+        if (show) visible += 1;
+      });
+
+      // A heading with no cards under it reads as a broken group, so drop it.
+      groups.forEach((group) => {
+        const shown = Array.from(
+          group.querySelectorAll<HTMLElement>(".grid-item"),
+        ).some((item) => !item.hidden);
+        group.hidden = !shown;
+      });
+
+      filters.forEach((btn) => {
+        const active = btn.dataset.filter === value;
+        btn.classList.toggle("is-active", active);
+        btn.setAttribute("aria-pressed", String(active));
+      });
+
+      if (empty) empty.hidden = visible > 0;
+
+      // Keep the filter shareable and back-navigable.
+      const url = new URL(window.location.href);
+      if (value === "all") url.searchParams.delete("filter");
+      else url.searchParams.set("filter", value);
+      window.history.replaceState({}, "", url);
+    };
+
+    filters.forEach((btn) => {
+      btn.addEventListener("click", () => apply(btn.dataset.filter ?? "all"));
+    });
+
+    const initial = new URL(window.location.href).searchParams.get("filter");
+    if (initial && filters.some((b) => b.dataset.filter === initial)) {
+      apply(initial);
+    }
+  };
+
+  document.addEventListener("DOMContentLoaded", initFilters);
+  document.addEventListener("astro:page-load", initFilters);
+</script>

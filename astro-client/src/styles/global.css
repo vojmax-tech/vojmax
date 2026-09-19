@@ -1,6 +1,6 @@
-/* 
-  P. James Design System v2.0
-  High-Performance Standards: Space Grotesk + Poppins, Tech Slate Palette
+/*
+  vojmax design system
+  Space Grotesk (display) + Poppins (body), Tech Slate palette, orange accent.
 */
 
 @import "tailwindcss";
@@ -167,8 +167,8 @@ h6,
 
 .glassmorphism-panel {
   background: rgb(var(--panel) / 0.45);
-  backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
 }
 
 [data-theme="light"] .glassmorphism-panel {
@@ -300,186 +300,56 @@ dialog[open] {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   PREMIUM AESTHETICS: SHEEN & STAGELIGHT
+   AMBIENT BACKDROP
+   One accent wash that drifts slowly behind the page. No blur filter: the
+   radial stops are soft enough on their own, and this way the animation is
+   pure compositing instead of a re-filtered full-viewport layer every frame.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.bg-sheen-container {
+.bg-ambient {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
+  inset: -25%;
   z-index: -1;
-  overflow: hidden;
-  background: rgb(var(--bg));
-}
-
-/* Moving Mesh Background */
-.bg-mesh-gradient {
-  position: absolute;
-  inset: -50%;
-  width: 200%;
-  height: 200%;
-  background-image:
-    radial-gradient(at 0% 0%, rgb(var(--accent) / 0.05) 0px, transparent 50%),
+  pointer-events: none;
+  background:
     radial-gradient(
-      at 100% 0%,
-      rgb(var(--accent2) / 0.03) 0px,
-      transparent 50%
+      55% 45% at 50% 22%,
+      rgb(var(--accent) / 0.07),
+      transparent 70%
     ),
     radial-gradient(
-      at 100% 100%,
-      rgb(var(--accent) / 0.05) 0px,
-      transparent 50%
-    ),
-    radial-gradient(at 0% 100%, rgb(var(--accent2) / 0.03) 0px, transparent 50%);
-  filter: blur(80px);
-  opacity: 0.5;
-  animation: mesh-drift 30s ease-in-out infinite alternate;
-  will-change: transform;
+      45% 40% at 78% 68%,
+      rgb(var(--accent2) / 0.05),
+      transparent 72%
+    );
+  animation: ambient-drift 28s ease-in-out infinite alternate;
 }
 
-[data-theme="light"] .bg-mesh-gradient {
-  opacity: 0.3;
-  background-image:
-    radial-gradient(at 0% 0%, rgb(var(--accent) / 0.03) 0px, transparent 50%),
+[data-theme="light"] .bg-ambient {
+  background:
     radial-gradient(
-      at 100% 0%,
-      rgb(var(--accent2) / 0.02) 0px,
-      transparent 50%
+      55% 45% at 50% 22%,
+      rgb(var(--accent) / 0.1),
+      transparent 70%
     ),
     radial-gradient(
-      at 100% 100%,
-      rgb(var(--accent) / 0.03) 0px,
-      transparent 50%
-    ),
-    radial-gradient(at 0% 100%, rgb(var(--accent2) / 0.02) 0px, transparent 50%);
+      45% 40% at 78% 68%,
+      rgb(var(--accent2) / 0.07),
+      transparent 72%
+    );
 }
 
-@keyframes mesh-drift {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(-5%, 5%) scale(1.05);
-  }
-  100% {
-    transform: translate(5%, -5%) scale(1);
-  }
-}
-
-.stagelight {
-  position: absolute;
-  top: -10%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 150vw;
-  height: 80vh;
-  background: radial-gradient(
-    circle at 50% 0%,
-    rgb(var(--accent) / 0.08) 0%,
-    rgb(var(--accent) / 0.03) 40%,
-    transparent 80%
-  );
-  filter: blur(80px);
-  animation: stagelight-pulse 8s ease-in-out infinite alternate;
-}
-
-[data-theme="light"] .stagelight {
-  background: radial-gradient(
-    circle at 50% 0%,
-    rgb(var(--accent) / 0.05) 0%,
-    rgb(var(--accent) / 0.02) 40%,
-    transparent 70%
-  );
-}
-
-@keyframes stagelight-pulse {
+@keyframes ambient-drift {
   from {
-    opacity: 0.6;
-    transform: translateX(-50%) translateY(-20px) scale(1);
+    transform: translate3d(-1.5%, -1%, 0) scale(1);
   }
   to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(20px) scale(1.1);
-  }
-}
-
-.ambient-glow {
-  position: absolute;
-  top: 40%;
-  right: -10%;
-  width: 60vw;
-  height: 60vw;
-  background: radial-gradient(
-    circle,
-    rgb(var(--accent2) / 0.03) 0%,
-    transparent 70%
-  );
-  filter: blur(100px);
-}
-
-.bg-moving-gradient {
-  position: absolute;
-  inset: -50%;
-  width: 200%;
-  height: 200%;
-  background:
-    radial-gradient(
-      circle at 15% 50%,
-      rgb(var(--accent) / 0.04),
-      transparent 40%
-    ),
-    radial-gradient(
-      circle at 85% 30%,
-      rgb(var(--accent2) / 0.05),
-      transparent 45%
-    ),
-    radial-gradient(
-      circle at 50% 80%,
-      rgb(var(--accent) / 0.03),
-      transparent 50%
-    );
-  filter: blur(60px);
-  animation: gradient-drift 15s ease-in-out infinite alternate;
-  z-index: -1;
-  pointer-events: none;
-}
-
-[data-theme="light"] .bg-moving-gradient {
-  background:
-    radial-gradient(
-      circle at 15% 50%,
-      rgb(var(--accent) / 0.03),
-      transparent 40%
-    ),
-    radial-gradient(
-      circle at 85% 30%,
-      rgb(var(--accent2) / 0.04),
-      transparent 45%
-    ),
-    radial-gradient(
-      circle at 50% 80%,
-      rgb(var(--accent) / 0.02),
-      transparent 50%
-    );
-}
-
-@keyframes gradient-drift {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(-3%, 4%) scale(1.05);
-  }
-  100% {
-    transform: translate(4%, -2%) scale(1);
+    transform: translate3d(1.5%, 1.5%, 0) scale(1.06);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bg-moving-gradient {
+  .bg-ambient {
     animation: none;
   }
 }

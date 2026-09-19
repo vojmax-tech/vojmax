@@ -1,0 +1,122 @@
+---
+/** What I work in, grouped by what the tools are for rather than by language. */
+interface Group {
+  label: string;
+  note: string;
+  items: string[];
+}
+
+const groups: Group[] = [
+  {
+    label: "Build",
+    note: "Where most of my hours go.",
+    items: ["TypeScript", "Python", "Rust", "Astro", "React", "Next.js"],
+  },
+  {
+    label: "Run",
+    note: "Edge first. I would rather not manage a server.",
+    items: ["Cloudflare Workers", "D1", "R2", "Vercel", "Postgres", "Supabase"],
+  },
+  {
+    label: "Model",
+    note: "Running inference close to where the data is.",
+    items: ["ONNX Runtime", "YOLOv8", "scikit-learn", "pandas", "OpenAI", "Claude"],
+  },
+  {
+    label: "Design",
+    note: "The half I don't automate.",
+    items: ["Figma", "Illustrator", "Type systems", "Motion", "Design tokens"],
+  },
+];
+---
+
+<section id="stack" class="stack-section container-fluid">
+  <div class="section-head">
+    <h2 class="section-title font-display">What I reach for.</h2>
+  </div>
+
+  <div class="stack-grid">
+    {
+      groups.map((group) => (
+        <div class="stack-card">
+          <h3 class="stack-label font-display">{group.label}</h3>
+          <p class="stack-note">{group.note}</p>
+          <ul class="stack-items">
+            {group.items.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </div>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .stack-section {
+    padding-block: clamp(3rem, 7vw, 5.5rem);
+    border-top: 1px solid rgb(var(--border) / 0.08);
+  }
+
+  .section-head {
+    max-width: 46rem;
+    margin-bottom: clamp(1.75rem, 3.5vw, 2.5rem);
+  }
+
+  .section-title {
+    margin: 0;
+    font-size: var(--step-3);
+    line-height: 1.12;
+    color: rgb(var(--text));
+  }
+
+  .stack-grid {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  }
+
+  .stack-card {
+    padding: 1.4rem;
+    border-radius: var(--radius-lg);
+    background: rgb(var(--panel));
+    border: 1px solid rgb(var(--border) / 0.1);
+    transition: border-color 0.25s ease;
+  }
+
+  .stack-card:hover {
+    border-color: rgb(var(--accent) / 0.32);
+  }
+
+  .stack-label {
+    margin: 0 0 0.3rem;
+    font-size: 1.05rem;
+    color: rgb(var(--text));
+  }
+
+  .stack-note {
+    margin: 0 0 1rem;
+    font-size: 0.82rem;
+    font-weight: 300;
+    line-height: 1.5;
+    color: rgb(var(--muted));
+  }
+
+  .stack-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .stack-items li {
+    padding: 0.28rem 0.6rem;
+    border-radius: var(--radius-sm);
+    background: rgb(var(--panel2));
+    border: 1px solid rgb(var(--border) / 0.08);
+    font-size: 0.75rem;
+    color: rgb(var(--text) / 0.75);
+  }
+</style>
