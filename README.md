@@ -1,7 +1,7 @@
 # vojmax
 
 Personal portfolio for Victor James, who works as **vojmax**. Astro, static,
-deployed to Vercel at [vojmax.dev](https://vojmax.dev).
+deployed to Vercel at [vojmax.dev](https://vojmax.vercel.app).
 
 ## Stack
 
