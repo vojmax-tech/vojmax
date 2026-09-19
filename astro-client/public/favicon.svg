@@ -1,1 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 128 128"></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>Vojmax</title>
+  <rect width="64" height="64" rx="14" fill="#000000"/>
+  <path d="M13 16h11l8 22-6 10z" fill="#FF7300"/>
+  <path d="M40 16h11L38 48H26l6-10z" fill="#FFFFFF"/>
+</svg>
