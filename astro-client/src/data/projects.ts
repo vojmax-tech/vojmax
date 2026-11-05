@@ -129,6 +129,7 @@ export const projects: Project[] = [
       "The demo data is national, so it describes countries rather than individual farms. A falling national trend can also reflect FAOSTAT revisions or expansion onto poorer land, which this data cannot separate. The upload path accepts farm-level data for work that needs it.",
     hue: 96,
     repo: repo("agrosynapse"),
+    demo: "https://agrosynapse.streamlit.app",
     featured: true,
   },
   {

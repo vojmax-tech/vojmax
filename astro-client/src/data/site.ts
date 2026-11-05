@@ -27,3 +27,15 @@ export const CONTACT = {
   whatsapp: "https://wa.me/2347033302085",
   phone: "+234 703 330 2085",
 } as const;
+
+/**
+ * Store settings.
+ *
+ * `interestEndpoint` is a hosted form backend (Formspree, Basin, Getform or
+ * similar) that accepts a POST and answers JSON. Leave it empty and the
+ * interest form on object pages hands a ready-written email to the visitor's
+ * mail app instead, so the site itself still stores nothing.
+ */
+export const STORE: { interestEndpoint: string } = {
+  interestEndpoint: "",
+};

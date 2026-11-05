@@ -1,0 +1,148 @@
+---
+import ProjectCover from "./ProjectCover.astro";
+import type { Product } from "../../data/products";
+import { formatPrice, productHref, productMeta, productStatus } from "../../data/products";
+import fs from "node:fs";
+import path from "node:path";
+
+type Props = Product;
+
+const product = Astro.props;
+const { slug, title, tagline, format, hue, checkout, download } = product;
+
+const coverPath = path.join(process.cwd(), "public", "store", `${slug}-main.png`);
+const src = fs.existsSync(coverPath) ? `/store/${slug}-main.png` : undefined;
+---
+
+<!-- `project-card` too, so ProjectCover's hover bloom picks this card up. -->
+<a
+  href={productHref(product)}
+  class="product-card project-card"
+  aria-label={`${title}, ${formatPrice(product)}`}
+>
+  <div class="card-cover">
+    <ProjectCover title={title} slug={slug} hue={hue} src={src} />
+    <span class="price-pill font-mono">{formatPrice(product)}</span>
+    {!checkout && !download && (
+      <span class="soon-pill">{productStatus(product)}</span>
+    )}
+  </div>
+
+  <div class="card-body">
+    <p class="card-meta font-mono">{productMeta(product)}</p>
+    <h3 class="card-title font-display">{title}</h3>
+    <p class="card-tagline">{tagline}</p>
+    <p class="card-format">{format}</p>
+  </div>
+</a>
+
+<style>
+  .product-card {
+    container-type: inline-size;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    background: rgb(var(--panel));
+    border: 1px solid rgb(var(--border) / 0.1);
+    text-decoration: none;
+    transition:
+      border-color 0.3s ease,
+      transform 0.3s ease,
+      box-shadow 0.3s ease;
+  }
+
+  .product-card:hover {
+    border-color: rgb(var(--accent) / 0.45);
+    transform: translateY(-3px);
+    box-shadow: 0 16px 40px rgb(0 0 0 / 0.18);
+  }
+
+  .product-card:focus-visible {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .product-card:hover {
+      transform: none;
+    }
+  }
+
+  .card-cover {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border-bottom: 1px solid rgb(var(--border) / 0.08);
+  }
+
+  .price-pill,
+  .soon-pill {
+    position: absolute;
+    top: 0.75rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: var(--radius-full);
+    background: rgb(var(--bg) / 0.72);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgb(var(--border) / 0.14);
+  }
+
+  .price-pill {
+    right: 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgb(var(--text));
+  }
+
+  .soon-pill {
+    left: 0.75rem;
+    font-size: 0.66rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgb(var(--muted));
+  }
+
+  .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding: 1.25rem 1.25rem 1.4rem;
+    flex: 1;
+  }
+
+  .card-meta {
+    margin: 0;
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgb(var(--accent));
+  }
+
+  .card-title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: rgb(var(--text));
+    transition: color 0.2s ease;
+  }
+
+  .product-card:hover .card-title {
+    color: rgb(var(--accent));
+  }
+
+  .card-tagline {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 300;
+    line-height: 1.55;
+    color: rgb(var(--text) / 0.72);
+    flex: 1;
+  }
+
+  .card-format {
+    margin: 0.35rem 0 0;
+    font-size: 0.75rem;
+    color: rgb(var(--muted));
+  }
+</style>

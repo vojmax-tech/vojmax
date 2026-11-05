@@ -1,0 +1,1039 @@
+---
+/**
+ * Page for a VOJMAX object (a product with layout: "object"), e.g.
+ * /store/frames/frame-01. Routed by src/pages/store/[...path].astro.
+ *
+ * The page is one dark artboard ("the world") set on the site's own
+ * background, so it reads as a canvas on a pasteboard in either theme.
+ * Every section renders only from fields the product actually has.
+ */
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import Navbar from "../../layout/Navbar.astro";
+import Footer from "../../sections/Footer.astro";
+import ObjectHead from "./ObjectHead.astro";
+import ObjectCover from "./ObjectCover.astro";
+import ObjectGallery from "./ObjectGallery.astro";
+import InterestForm from "./InterestForm.astro";
+import VxMark from "./VxMark.astro";
+import {
+  categoryInfo,
+  formatPrice,
+  fullName,
+  productStatus,
+} from "../../../data/products";
+import type { Product } from "../../../data/products";
+import fs from "node:fs";
+import path from "node:path";
+
+interface Props {
+  product: Product;
+}
+
+const { product } = Astro.props;
+
+const name = fullName(product);
+const price = formatPrice(product);
+const status = productStatus(product);
+const model = product.model ?? product.title;
+const category = categoryInfo(product.category);
+const categoryHref = `/store/${product.category}`;
+// No checkout yet: the page takes sign-ups for the release instead.
+const upcoming = !product.checkout;
+
+const coverFile = `${product.slug}-main.png`;
+const ogImage = fs.existsSync(path.join(process.cwd(), "public", "store", coverFile))
+  ? `/store/${coverFile}`
+  : undefined;
+
+const details = [
+  { term: "Label", value: product.label },
+  { term: "Object", value: product.title },
+  { term: "Model", value: product.model },
+  { term: "Category", value: product.type },
+  { term: "Status", value: status, status: true },
+  { term: "Price", value: price },
+].filter((row) => row.value);
+
+const drawingLabel = product.artLabel ?? `Concept visualisation of ${name}.`;
+
+// The first description paragraph leads the hero; the rest support it.
+const [lede = product.tagline, ...support] = product.description;
+---
+
+<BaseLayout title={`${name} | vojmax store`} description={product.tagline} image={ogImage}>
+  <ObjectHead slot="head" />
+  <Navbar alwaysVisible={true} homeSectionLinks={true} />
+
+  <main class="obj pt-24 md:pt-28 pb-16 md:pb-24">
+    <div class="obj-shell">
+      <article class="world vx-world" aria-labelledby="obj-title">
+        <div class="world-grid" aria-hidden="true"></div>
+
+        <!-- Document bar: where you are, and what state the object is in. -->
+        <div class="world-bar">
+          <nav aria-label="Breadcrumb">
+            <ol class="crumbs vx-tech">
+              <li><a href="/store">Store</a></li>
+              <li><a href={categoryHref}>{category?.title ?? product.category}</a></li>
+              <li aria-current="page">{model}</li>
+            </ol>
+          </nav>
+          <p class="bar-status vx-tech">
+            <span class="dot" aria-hidden="true"></span>
+            {status}
+          </p>
+        </div>
+
+        <!-- 01 Hero -->
+        <section class="hero">
+          <header class="hero-head">
+            <h1 id="obj-title" class="hero-title">
+              <span class="hero-label font-display"><VxMark />{product.label}</span>
+              <span class="hero-name font-display">{product.title}</span>
+            </h1>
+          </header>
+
+          <figure class="hero-stage reveal-fx" data-stage style={`view-transition-name: object-${product.slug};`}>
+            <ObjectCover product={product} variant="stage" id="stage" label={drawingLabel} />
+          </figure>
+
+          <div class="hero-info">
+            <div class="hero-copy">
+              <p class="hero-lede">{lede}</p>
+              {support.map((para) => <p class="hero-support">{para}</p>)}
+            </div>
+
+            <div class="hero-buy" data-hero-cta>
+              <p class="hero-state vx-tech">
+                <span>{model}</span>
+                <span class="hero-state-status"><span class="dot" aria-hidden="true" />{status}</span>
+              </p>
+              <p class="hero-price">
+                <span class="vx-tech">Price</span>
+                <span class="hero-price-value font-display">{price}</span>
+              </p>
+              {product.priceNote && <p class="hero-price-note">{product.priceNote}</p>}
+              {
+                upcoming ? (
+                  <a href="#notify" class="cta">
+                    Get notified
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="M12 5v14M6 13l6 6 6-6" />
+                    </svg>
+                  </a>
+                ) : (
+                  <a href={product.checkout} class="cta" target="_blank" rel="noopener">
+                    Buy for {price}
+                  </a>
+                )
+              }
+            </div>
+          </div>
+        </section>
+
+        <!-- Details -->
+        <section class="block details" aria-labelledby="details-title">
+          <h2 id="details-title" class="block-label vx-tech">Details</h2>
+          <dl class="details-grid">
+            {
+              details.map(({ term, value, status: isStatus }) => (
+                <div class="detail reveal-fx">
+                  <dt class="vx-tech">{term}</dt>
+                  <dd class="font-display">
+                    {isStatus && <span class="dot" aria-hidden="true" />}
+                    {value}
+                  </dd>
+                </div>
+              ))
+            }
+          </dl>
+        </section>
+
+        <!-- Story -->
+        {
+          product.story && (
+            <section class="block story" aria-labelledby="story-title">
+              <p class="block-label vx-tech" aria-hidden="true">Story</p>
+              <div class="story-grid">
+                <div class="story-head">
+                  <h2 id="story-title" class="story-title font-display reveal-fx">{product.story.title}</h2>
+                  {product.story.principles && (
+                    <ol class="principles reveal-fx">
+                      {product.story.principles.map((line, i) => (
+                        <li>
+                          <span class="vx-tech">{String(i + 1).padStart(2, "0")}</span>
+                          <span class="font-display">{line}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+                <div class="story-body reveal-fx">
+                  {product.story.paragraphs.map((para) => <p>{para}</p>)}
+                </div>
+              </div>
+            </section>
+          )
+        }
+
+        <!-- Gallery -->
+        {
+          product.gallery && product.gallery.length > 0 && (
+            <section class="block gallery" aria-labelledby="gallery-title">
+              <div class="block-head">
+                <h2 id="gallery-title" class="block-label vx-tech">Gallery</h2>
+                <p class="block-note">Concept drawings stand in until the first samples are photographed.</p>
+              </div>
+              <div class="reveal-fx">
+                <ObjectGallery product={product} slots={product.gallery} />
+              </div>
+            </section>
+          )
+        }
+
+        <!-- Interest -->
+        {
+          upcoming && (
+            <section id="notify" class="block interest" aria-labelledby="interest-title">
+              <p class="block-label vx-tech" aria-hidden="true">Release list</p>
+              <div class="interest-grid">
+                <div class="interest-intro">
+                  <h2 id="interest-title" class="interest-title font-display">Be first to know</h2>
+                  <p>
+                    {product.title} is in the works and not on sale yet. Leave your name
+                    and email and you'll hear the moment it's released.
+                  </p>
+                  <p class="interest-price vx-tech">
+                    <span>{model}</span>
+                    <span>{price}</span>
+                  </p>
+                </div>
+                <div class="interest-form">
+                  <InterestForm product={product} />
+                </div>
+              </div>
+            </section>
+          )
+        }
+
+        <footer class="world-foot">
+          <p class="world-sign font-display"><VxMark />{product.label}</p>
+          <nav class="world-links vx-tech" aria-label="More from the store">
+            <a href={categoryHref}>All {category?.title.toLowerCase() ?? "products"}</a>
+            <a href="/store">Back to store</a>
+          </nav>
+        </footer>
+      </article>
+    </div>
+  </main>
+
+  {
+    upcoming && (
+      <div class="dock vx-world" data-dock data-visible="false" inert>
+        <p class="dock-name">
+          <span class="dock-label font-display">{product.label}</span>
+          <span class="dock-title font-display">{product.title}</span>
+        </p>
+        <span class="dock-price vx-tech">{price}</span>
+        <a href="#notify" class="dock-cta vx-tech">Get notified</a>
+      </div>
+    )
+  }
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .obj-shell {
+    width: min(90rem, 100%);
+    margin-inline: auto;
+    padding-inline: clamp(0.75rem, 2.5vw, 2rem);
+  }
+
+  /* The artboard */
+  .world {
+    position: relative;
+    overflow: hidden;
+    border-radius: clamp(18px, 2.2vw, 30px);
+    border: 1px solid rgb(var(--border) / 0.14);
+    box-shadow: 0 50px 140px -60px rgb(0 0 0 / 0.7);
+    padding: 0 clamp(1.1rem, 4.2vw, 4rem);
+  }
+
+  .world-grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgb(var(--border) / 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--border) / 0.035) 1px, transparent 1px);
+    background-size: 64px 64px;
+    -webkit-mask-image: linear-gradient(180deg, #000, transparent 38%, transparent 70%, #000 100%);
+    mask-image: linear-gradient(180deg, #000, transparent 38%, transparent 70%, #000 100%);
+  }
+
+  .world > :not(.world-grid) {
+    position: relative;
+  }
+
+  .dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgb(var(--accent));
+    box-shadow: 0 0 0 3px rgb(var(--accent) / 0.18);
+    flex-shrink: 0;
+  }
+
+  /* Document bar */
+  .world-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 3.4rem;
+    margin-inline: calc(-1 * clamp(1.1rem, 4.2vw, 4rem));
+    padding-inline: clamp(1.1rem, 4.2vw, 4rem);
+    border-bottom: 1px solid rgb(var(--border) / 0.12);
+    background: rgb(var(--panel2) / 0.6);
+  }
+
+  .crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: rgb(var(--muted));
+  }
+
+  /* Chevron, not a slash: category names can contain one ("Frames / Objects"). */
+  .crumbs li + li::before {
+    content: "›";
+    margin-right: 0.4rem;
+    color: rgb(var(--faint));
+  }
+
+  .crumbs a {
+    color: rgb(var(--muted));
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .crumbs a:hover {
+    color: rgb(var(--text));
+  }
+
+  .crumbs [aria-current] {
+    color: rgb(var(--text));
+  }
+
+  .bar-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0;
+    color: rgb(var(--text) / 0.85);
+  }
+
+  /* Hero */
+  .hero {
+    padding-top: clamp(2rem, 4.5vw, 3.75rem);
+  }
+
+  .hero-head {
+    margin-bottom: clamp(1.5rem, 3vw, 2.25rem);
+  }
+
+  .hero-title {
+    display: grid;
+    gap: clamp(0.6rem, 1.4vw, 1.1rem);
+    margin: 0;
+  }
+
+  .hero-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+    font-size: clamp(0.8rem, 1.1vw, 1rem);
+    font-weight: 700;
+    letter-spacing: 0.34em;
+    line-height: 1;
+    color: rgb(var(--text));
+  }
+
+  .hero-name {
+    font-size: clamp(3.4rem, 10vw, 8.5rem);
+    font-weight: 700;
+    line-height: 0.8;
+    letter-spacing: -0.055em;
+    margin-left: -0.05em;
+    color: rgb(var(--text));
+  }
+
+
+  .hero-stage {
+    margin: 0 calc(-1 * clamp(0.35rem, 1.2vw, 1rem));
+    aspect-ratio: 16 / 8.6;
+    overflow: hidden;
+    border-radius: clamp(14px, 1.6vw, 22px);
+    border: 1px solid rgb(var(--border) / 0.14);
+  }
+
+  .hero-info {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+    gap: 2rem clamp(1.5rem, 3vw, 3rem);
+    align-items: start;
+    padding-block: clamp(2rem, 4vw, 3.25rem) clamp(2.75rem, 5.5vw, 5rem);
+  }
+
+  .hero-lede {
+    margin: 0 0 1.1rem;
+    max-width: 30ch;
+    font-family: var(--font-display);
+    font-size: clamp(1.35rem, 2.3vw, 2.05rem);
+    font-weight: 500;
+    line-height: 1.22;
+    letter-spacing: -0.02em;
+    color: rgb(var(--text));
+  }
+
+  .hero-support {
+    margin: 0;
+    max-width: 52ch;
+    font-size: 1rem;
+    font-weight: 300;
+    line-height: 1.7;
+    color: rgb(var(--muted));
+  }
+
+  .hero-support + .hero-support {
+    margin-top: 0.9rem;
+  }
+
+  .hero-state {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.25rem;
+    margin: 0 0 0.35rem;
+    color: rgb(var(--text));
+  }
+
+  .hero-state-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: rgb(var(--muted));
+  }
+
+  .hero-buy {
+    display: grid;
+    gap: 0.9rem;
+    justify-items: start;
+    padding-left: clamp(0rem, 2vw, 2rem);
+    border-left: 1px solid rgb(var(--border) / 0.14);
+  }
+
+  .hero-price {
+    display: grid;
+    gap: 0.4rem;
+    margin: 0;
+    color: rgb(var(--muted));
+  }
+
+  .hero-price-value {
+    font-size: clamp(2.6rem, 4.4vw, 3.8rem);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: rgb(var(--text));
+  }
+
+  .hero-price-note {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 300;
+    color: rgb(var(--muted));
+  }
+
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    min-height: 3.35rem;
+    margin-top: 0.4rem;
+    padding: 0.9rem 1.5rem;
+    border-radius: 999px;
+    background: rgb(var(--accent));
+    color: rgb(var(--bg));
+    font-family: var(--font-tech);
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: filter 0.25s ease;
+  }
+
+  .cta svg {
+    transition: transform 0.3s ease;
+  }
+
+  .cta:hover {
+    filter: brightness(1.08);
+  }
+
+  .cta:hover svg {
+    transform: translateY(2px);
+  }
+
+  /* Sections */
+  .block {
+    padding-block: clamp(2.75rem, 5.5vw, 5rem);
+    border-top: 1px solid rgb(var(--border) / 0.12);
+  }
+
+  .block-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem 2rem;
+    margin-bottom: clamp(1.5rem, 3vw, 2.25rem);
+  }
+
+  /* Section label: an accent tick, then the name. */
+  .block-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0 0 clamp(1.5rem, 3vw, 2.25rem);
+    font-size: 0.74rem;
+    color: rgb(var(--text) / 0.82);
+  }
+
+  .block-label::before {
+    content: "";
+    width: 1.1rem;
+    height: 1px;
+    background: rgb(var(--accent));
+  }
+
+  .block-head .block-label {
+    margin: 0;
+  }
+
+  .block-note {
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 300;
+    color: rgb(var(--muted));
+  }
+
+  /* Details */
+  .details-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    margin: 0;
+    border-block: 1px solid rgb(var(--border) / 0.12);
+  }
+
+  .detail {
+    display: grid;
+    align-content: space-between;
+    gap: 1.75rem;
+    min-height: 7.25rem;
+    padding: 1.15rem 1.25rem 1.25rem;
+    border-left: 1px solid rgb(var(--border) / 0.12);
+  }
+
+  .detail:first-child {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .detail dt {
+    color: rgb(var(--muted));
+  }
+
+  .detail dd {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0;
+    font-size: clamp(0.98rem, 1.25vw, 1.2rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    color: rgb(var(--text));
+  }
+
+  /* Story */
+  .story-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: clamp(2.5rem, 6vw, 6rem);
+    align-items: start;
+  }
+
+  .story-title {
+    margin: 0 0 clamp(2rem, 4vw, 3.25rem);
+    max-width: 14ch;
+    font-size: clamp(2.3rem, 5.2vw, 4.6rem);
+    font-weight: 700;
+    line-height: 0.98;
+    letter-spacing: -0.045em;
+    color: rgb(var(--text));
+  }
+
+  .principles {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-width: 30rem;
+  }
+
+  .principles li {
+    display: grid;
+    grid-template-columns: 2.75rem 1fr;
+    align-items: baseline;
+    padding-block: 0.95rem;
+    border-top: 1px solid rgb(var(--border) / 0.12);
+  }
+
+  .principles li:last-child {
+    border-bottom: 1px solid rgb(var(--border) / 0.12);
+  }
+
+  .principles .vx-tech {
+    color: rgb(var(--accent));
+  }
+
+  .principles .font-display {
+    font-size: clamp(1.15rem, 1.8vw, 1.5rem);
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    color: rgb(var(--text));
+  }
+
+  .story-body {
+    padding-top: 0.5rem;
+  }
+
+  .story-body p {
+    margin: 0 0 1.35rem;
+    max-width: 44ch;
+    font-size: clamp(1rem, 1.1vw, 1.1rem);
+    font-weight: 300;
+    line-height: 1.8;
+    color: rgb(var(--text) / 0.8);
+  }
+
+  .story-body p:first-child {
+    color: rgb(var(--text));
+  }
+
+  /* Interest */
+  .interest-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(2rem, 6vw, 6rem);
+    align-items: start;
+  }
+
+  .interest-title {
+    margin: 0 0 1.5rem;
+    font-size: clamp(2.1rem, 4.2vw, 3.6rem);
+    font-weight: 700;
+    line-height: 0.98;
+    letter-spacing: -0.04em;
+    color: rgb(var(--text));
+  }
+
+  .interest-intro p:not(.interest-price) {
+    margin: 0 0 0.9rem;
+    max-width: 40ch;
+    font-weight: 300;
+    line-height: 1.7;
+    color: rgb(var(--text) / 0.78);
+  }
+
+  .interest-price {
+    display: flex;
+    justify-content: space-between;
+    max-width: 22rem;
+    margin: 2rem 0 0;
+    padding-top: 1rem;
+    border-top: 1px solid rgb(var(--border) / 0.12);
+    color: rgb(var(--muted));
+  }
+
+  .interest-price span:last-child {
+    color: rgb(var(--text));
+  }
+
+  .interest-form {
+    padding: clamp(1.25rem, 3vw, 2.25rem);
+    border-radius: 20px;
+    border: 1px solid rgb(var(--border) / 0.14);
+    background:
+      linear-gradient(160deg, rgb(var(--border) / 0.05), transparent 45%),
+      rgb(var(--panel2) / 0.7);
+  }
+
+  /* Foot */
+  .world-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    margin-inline: calc(-1 * clamp(1.1rem, 4.2vw, 4rem));
+    padding: 1.5rem clamp(1.1rem, 4.2vw, 4rem);
+    border-top: 1px solid rgb(var(--border) / 0.12);
+    background: rgb(var(--panel2) / 0.6);
+  }
+
+  .world-sign {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.28em;
+    color: rgb(var(--text));
+  }
+
+
+  .world-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.75rem;
+  }
+
+  .world-links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    color: rgb(var(--muted));
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .world-links a:hover {
+    color: rgb(var(--accent));
+  }
+
+  /* Dock: a quiet CTA that appears once the hero's has scrolled away. */
+  .dock {
+    position: fixed;
+    left: 50%;
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    width: max-content;
+    max-width: calc(100vw - 1.5rem);
+    padding: 0.45rem 0.45rem 0.45rem 1.25rem;
+    border-radius: 999px;
+    border: 1px solid rgb(var(--border) / 0.18);
+    background: rgb(var(--bg) / 0.86);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 18px 50px -18px rgb(0 0 0 / 0.7);
+    transform: translate(-50%, calc(100% + 2rem));
+    opacity: 0;
+    transition:
+      transform 0.5s var(--ease-out),
+      opacity 0.35s ease;
+  }
+
+  .dock[data-visible="true"] {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+
+  .dock-name {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin: 0;
+    white-space: nowrap;
+    line-height: 1;
+  }
+
+  .dock-label {
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.28em;
+    color: rgb(var(--muted));
+  }
+
+  .dock-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: rgb(var(--text));
+  }
+
+  .dock-price {
+    color: rgb(var(--muted));
+  }
+
+  .dock-cta {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 1.2rem;
+    border-radius: 999px;
+    background: rgb(var(--accent));
+    color: rgb(var(--bg));
+    text-decoration: none;
+    white-space: nowrap;
+    transition: filter 0.2s ease;
+  }
+
+  .dock-cta:hover {
+    filter: brightness(1.08);
+  }
+
+  /* Tablet */
+  @media (max-width: 1024px) {
+    .hero-info {
+      grid-template-columns: 1fr;
+      gap: 1.75rem;
+    }
+
+    .hero-lede {
+      max-width: 34ch;
+    }
+
+    .hero-buy {
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      column-gap: 2rem;
+      padding: 1.5rem 0 0;
+      border-left: 0;
+      border-top: 1px solid rgb(var(--border) / 0.14);
+    }
+
+    .hero-state {
+      grid-column: 1 / -1;
+    }
+
+    .hero-price-note {
+      grid-column: 1;
+      grid-row: 3;
+    }
+
+    .hero-buy .cta {
+      grid-column: 2;
+      grid-row: 2 / span 2;
+      align-self: center;
+      margin: 0;
+    }
+
+    .details-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .detail:nth-child(3n + 1) {
+      border-left: 0;
+      padding-left: 0;
+    }
+
+    .detail:nth-child(n + 4) {
+      border-top: 1px solid rgb(var(--border) / 0.12);
+    }
+
+    .story-grid,
+    .interest-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .story-title {
+      max-width: 16ch;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .hero-stage {
+      aspect-ratio: 4 / 3.4;
+      margin-inline: calc(-1 * clamp(0.5rem, 2vw, 1rem));
+    }
+
+
+    .hero-info {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .hero-buy {
+      grid-template-columns: 1fr;
+      padding-top: 1.25rem;
+    }
+
+    .hero-buy .cta {
+      grid-column: 1;
+      grid-row: auto;
+      width: 100%;
+      margin-top: 0.4rem;
+    }
+
+    .hero-name {
+      font-size: clamp(3.4rem, 18vw, 6rem);
+    }
+
+    /* Small screens: the object takes nearly the full stage. */
+    .hero-stage :global(.oc--stage) {
+      --art-w: min(128%, 150cqh);
+      --art-top: 55%;
+    }
+
+    .details-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .detail,
+    .detail:nth-child(3n + 1) {
+      min-height: 6.5rem;
+      gap: 1.25rem;
+      padding: 1rem 0 1.1rem 1rem;
+      border-left: 1px solid rgb(var(--border) / 0.12);
+    }
+
+    .detail:nth-child(odd) {
+      border-left: 0;
+      padding-left: 0;
+    }
+
+    .detail:nth-child(n + 3) {
+      border-top: 1px solid rgb(var(--border) / 0.12);
+    }
+
+    .world-bar .bar-status {
+      display: none;
+    }
+
+    .dock {
+      left: 0.75rem;
+      right: 0.75rem;
+      width: auto;
+      max-width: none;
+      gap: 0.75rem;
+      padding-left: 1rem;
+      transform: translateY(calc(100% + 2rem));
+    }
+
+    .dock-name {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.3rem;
+    }
+
+    .dock-price {
+      margin-left: auto;
+    }
+
+    .dock[data-visible="true"] {
+      transform: none;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .dock-price {
+      display: none;
+    }
+
+    .dock-cta {
+      margin-left: auto;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dock,
+    .cta svg {
+      transition: none;
+    }
+    .cta:hover svg {
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  // Stage: the grid under the object drifts a few pixels with the pointer.
+  const initStage = () => {
+    const stage = document.querySelector<HTMLElement>("[data-stage]");
+    const cover = stage?.querySelector<HTMLElement>("[data-object-cover]");
+    if (!stage || !cover || !window.matchMedia("(pointer: fine)").matches) return;
+
+    stage.addEventListener("pointermove", (event) => {
+      if (reduceMotion.matches) return;
+      const rect = stage.getBoundingClientRect();
+      const x = (event.clientX - rect.left) / rect.width - 0.5;
+      const y = (event.clientY - rect.top) / rect.height - 0.5;
+      cover.style.setProperty("--gx", (x * -14).toFixed(1));
+      cover.style.setProperty("--gy", (y * -10).toFixed(1));
+    });
+
+    stage.addEventListener("pointerleave", () => {
+      cover.style.setProperty("--gx", "0");
+      cover.style.setProperty("--gy", "0");
+    });
+  };
+
+  // Dock: shown once the hero CTA has scrolled out of view, hidden again
+  // over the interest form and the footer, where it would only repeat them.
+  const initDock = () => {
+    const dock = document.querySelector<HTMLElement>("[data-dock]");
+    const heroCta = document.querySelector<HTMLElement>("[data-hero-cta]");
+    const interest = document.getElementById("notify");
+    const footer = document.querySelector<HTMLElement>(".site-footer");
+    if (!dock || !heroCta) return;
+
+    const visible = new Map<Element, boolean>();
+    const update = () => {
+      const heroPassed = !visible.get(heroCta) && heroCta.getBoundingClientRect().top < 0;
+      const covered = (interest && visible.get(interest)) || (footer && visible.get(footer));
+      const show = heroPassed && !covered;
+      dock.dataset.visible = String(show);
+      dock.toggleAttribute("inert", !show);
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => visible.set(entry.target, entry.isIntersecting));
+      update();
+    });
+    [heroCta, interest, footer].forEach((el) => el && observer.observe(el));
+  };
+
+  // Keyboard users who activate "Get notified" land in the form,
+  // not just scrolled to it. Pointer clicks only scroll, so no keyboard pops
+  // up on phones uninvited.
+  const initInterestLinks = () => {
+    const field = document.querySelector<HTMLInputElement>("#notify input[name='name']");
+    if (!field) return;
+    document.querySelectorAll<HTMLAnchorElement>('a[href="#notify"]').forEach((link) => {
+      link.addEventListener("click", (event) => {
+        if (event.detail !== 0) return;
+        window.setTimeout(() => field.focus({ preventScroll: true }), reduceMotion.matches ? 0 : 500);
+      });
+    });
+  };
+
+  initStage();
+  initDock();
+  initInterestLinks();
+</script>

@@ -353,3 +353,46 @@ dialog[open] {
     animation: none;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   OBJECT WORLD
+   Scoped tokens for VOJMAX objects (store/object components). The world is
+   dark in both themes, like a canvas sitting on the page's pasteboard, and it
+   redefines the site tokens locally so anything placed inside inherits it.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.vx-world {
+  --bg: 11 13 20; /* #0B0D14 */
+  --panel: 17 20 30;
+  --panel2: 14 17 26;
+  --text: 245 247 250; /* #F5F7FA */
+  --muted: 138 149 173; /* #8A95AD, blue-gray */
+  --faint: 92 103 128; /* decorative only, below AA for body text */
+  --border: 170 185 220; /* blue-gray line, always used at low alpha */
+  --accent: 255 115 0; /* #FF7300 */
+  --accent2: 255 140 40;
+  --font-tech: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  color-scheme: dark;
+  background: rgb(var(--bg));
+  color: rgb(var(--text));
+}
+
+.vx-world ::selection {
+  background: rgb(var(--accent) / 0.4);
+}
+
+/* Technical label: small caps-style mono, the world's secondary voice. */
+.vx-tech {
+  font-family: var(--font-tech);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.vx-world :focus-visible {
+  outline: 2px solid rgb(var(--accent));
+  outline-offset: 3px;
+}

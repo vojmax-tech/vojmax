@@ -1,0 +1,464 @@
+---
+/**
+ * Release list for an object that is coming soon.
+ *
+ * The site has no backend. With STORE.interestEndpoint set (a hosted form
+ * service), the form posts there and confirms in place. Without it, the form
+ * hands a ready-written email to the visitor's mail app, addressed to
+ * CONTACT.email, and says so before they press the button.
+ */
+import { CONTACT, STORE } from "../../../data/site";
+import { fullName } from "../../../data/products";
+import type { Product } from "../../../data/products";
+
+interface Props {
+  product: Product;
+}
+
+const { product } = Astro.props;
+const name = fullName(product);
+const endpoint = STORE.interestEndpoint;
+const uid = `if-${product.slug}`;
+---
+
+<form
+  class="if"
+  novalidate
+  data-interest-form
+  data-endpoint={endpoint}
+  data-email={CONTACT.email}
+  data-product={name}
+  action={endpoint || `mailto:${CONTACT.email}?subject=${encodeURIComponent(`Notify me: ${name}`)}`}
+  enctype={endpoint ? undefined : "text/plain"}
+  method="post"
+>
+  <input type="hidden" name="product" value={name} />
+
+  <div class="if-fields">
+    <div class="if-field">
+      <label for={`${uid}-name`} class="if-label vx-tech">Name</label>
+      <input
+        id={`${uid}-name`}
+        name="name"
+        type="text"
+        autocomplete="name"
+        required
+        maxlength="120"
+        aria-describedby={`${uid}-name-error`}
+        class="if-input"
+      />
+      <p id={`${uid}-name-error`} class="if-error" data-error-for="name"></p>
+    </div>
+
+    <div class="if-field">
+      <label for={`${uid}-email`} class="if-label vx-tech">Email</label>
+      <input
+        id={`${uid}-email`}
+        name="email"
+        type="email"
+        inputmode="email"
+        autocomplete="email"
+        required
+        maxlength="200"
+        aria-describedby={`${uid}-email-error`}
+        class="if-input"
+      />
+      <p id={`${uid}-email-error`} class="if-error" data-error-for="email"></p>
+    </div>
+  </div>
+
+  <label class="if-check">
+    <input type="checkbox" name="notify" value="yes" />
+    <span class="if-box" aria-hidden="true">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M3.5 8.5l3 3 6-7"></path>
+      </svg>
+    </span>
+    <span class="if-check-text">Also tell me about future VOJMAX objects.</span>
+  </label>
+
+  <div class="if-submit-row">
+    <button type="submit" class="if-submit">
+      <span class="if-submit-text">Notify me</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M5 12h14M13 6l6 6-6 6"></path>
+      </svg>
+    </button>
+    <p class="if-fine">
+      {
+        endpoint
+          ? "Your name and email are used only to tell you about this object."
+          : "This opens your email app with the note written for you. Send it and you're on the list."
+      }
+    </p>
+  </div>
+
+  <div class="if-status" role="status" aria-live="polite" tabindex="-1" data-status></div>
+</form>
+
+<style>
+  .if {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .if-fields {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  }
+
+  .if-field {
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .if-label {
+    color: rgb(var(--muted));
+  }
+
+  .if-input {
+    width: 100%;
+    min-height: 3.25rem;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    border: 1px solid rgb(var(--border) / 0.2);
+    background: rgb(var(--panel) / 0.7);
+    color: rgb(var(--text));
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 400;
+    transition:
+      border-color 0.25s ease,
+      background-color 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+
+  .if-input:hover {
+    border-color: rgb(var(--border) / 0.32);
+  }
+
+  .if-input:focus {
+    outline: none;
+    border-color: rgb(var(--accent));
+    background: rgb(var(--panel));
+    box-shadow: 0 0 0 3px rgb(var(--accent) / 0.22);
+  }
+
+  .if-input[aria-invalid="true"] {
+    border-color: rgb(255 120 110);
+  }
+
+  .if-error {
+    min-height: 1.1rem;
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: rgb(255 150 140);
+  }
+
+  .if-error:empty {
+    min-height: 0;
+  }
+
+  /* Custom checkbox: the real input stays in place for keyboard and AT. */
+  .if-check {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+    cursor: pointer;
+  }
+
+  .if-check input {
+    position: absolute;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .if-box {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.1rem;
+    border-radius: 5px;
+    border: 1px solid rgb(var(--border) / 0.35);
+    background: rgb(var(--panel));
+    color: rgb(var(--bg));
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  .if-box svg {
+    width: 0.8rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .if-check input:checked + .if-box {
+    background: rgb(var(--accent));
+    border-color: rgb(var(--accent));
+  }
+
+  .if-check input:checked + .if-box svg {
+    opacity: 1;
+  }
+
+  .if-check input:focus-visible + .if-box {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 3px;
+  }
+
+  .if-check-text {
+    font-size: 0.92rem;
+    font-weight: 300;
+    line-height: 1.55;
+    color: rgb(var(--text) / 0.85);
+  }
+
+  .if-submit-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.5rem;
+    padding-top: 0.5rem;
+  }
+
+  .if-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    min-height: 3.35rem;
+    padding: 0.9rem 1.6rem;
+    border: 0;
+    border-radius: 999px;
+    background: rgb(var(--accent));
+    color: rgb(var(--bg));
+    font-family: var(--font-tech);
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition:
+      filter 0.25s ease,
+      transform 0.25s ease;
+  }
+
+  .if-submit svg {
+    transition: transform 0.3s ease;
+  }
+
+  .if-submit:hover {
+    filter: brightness(1.08);
+  }
+
+  .if-submit:hover svg {
+    transform: translateX(3px);
+  }
+
+  .if-submit:active {
+    transform: translateY(1px);
+  }
+
+  .if-submit[aria-busy="true"] {
+    cursor: progress;
+    filter: saturate(0.6);
+  }
+
+  .if-fine {
+    flex: 1 1 16rem;
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 300;
+    line-height: 1.55;
+    color: rgb(var(--muted));
+  }
+
+  .if-status:empty {
+    display: none;
+  }
+
+  .if-status {
+    padding: 1rem 1.15rem;
+    border-radius: 12px;
+    border: 1px solid rgb(var(--border) / 0.18);
+    background: rgb(var(--panel) / 0.8);
+    font-size: 0.92rem;
+    font-weight: 300;
+    line-height: 1.6;
+    color: rgb(var(--text) / 0.9);
+  }
+
+  .if-status:focus {
+    outline: none;
+  }
+
+  .if-status[data-tone="done"] {
+    border-color: rgb(var(--accent) / 0.5);
+  }
+
+  .if-status :global(strong) {
+    display: block;
+    margin-bottom: 0.2rem;
+    font-weight: 600;
+    color: rgb(var(--text));
+  }
+
+  .if-status :global(a) {
+    color: rgb(var(--accent));
+  }
+
+  /* After a confirmed post the fields go; the confirmation stays. */
+  .if[data-state="done"] > :not(.if-status) {
+    display: none;
+  }
+
+  @media (max-width: 520px) {
+    .if-submit {
+      width: 100%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .if-submit,
+    .if-submit svg {
+      transition: none;
+    }
+    .if-submit:hover svg {
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const escapeHtml = (value: string) =>
+    value.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+  const initInterestForms = () => {
+    document.querySelectorAll<HTMLFormElement>("[data-interest-form]").forEach((form) => {
+      if (form.dataset.ready) return;
+      form.dataset.ready = "true";
+
+      const status = form.querySelector<HTMLElement>("[data-status]")!;
+      const button = form.querySelector<HTMLButtonElement>(".if-submit")!;
+      const buttonText = button.querySelector<HTMLElement>(".if-submit-text")!;
+      const nameInput = form.elements.namedItem("name") as HTMLInputElement;
+      const emailInput = form.elements.namedItem("email") as HTMLInputElement;
+      const notifyInput = form.elements.namedItem("notify") as HTMLInputElement;
+      const { endpoint, email: inbox = "", product = "" } = form.dataset;
+
+      const setError = (input: HTMLInputElement, message: string) => {
+        const slot = form.querySelector<HTMLElement>(`[data-error-for="${input.name}"]`);
+        if (slot) slot.textContent = message;
+        if (message) input.setAttribute("aria-invalid", "true");
+        else input.removeAttribute("aria-invalid");
+      };
+
+      const validate = (input: HTMLInputElement): boolean => {
+        const value = input.value.trim();
+        let message = "";
+        if (input === nameInput && !value) message = "Add your name.";
+        if (input === emailInput) {
+          if (!value) message = "Add your email.";
+          else if (!EMAIL_PATTERN.test(value)) message = "That email doesn't look complete.";
+        }
+        setError(input, message);
+        return !message;
+      };
+
+      // Re-check a field once the visitor has seen its error, not before.
+      [nameInput, emailInput].forEach((input) => {
+        input.addEventListener("input", () => {
+          if (input.getAttribute("aria-invalid") === "true") validate(input);
+        });
+        input.addEventListener("blur", () => {
+          if (input.value.trim()) validate(input);
+        });
+      });
+
+      const showStatus = (html: string, tone: "info" | "done" | "error" = "info") => {
+        status.dataset.tone = tone;
+        status.innerHTML = html;
+      };
+
+      const mailtoHref = (name: string, address: string, notify: boolean) => {
+        const subject = `Notify me: ${product}`;
+        const body = [
+          `Hi, I'd like to hear when ${product} is released.`,
+          "",
+          `Name: ${name}`,
+          `Email: ${address}`,
+          `Also tell me about future VOJMAX objects: ${notify ? "yes" : "no"}`,
+        ].join("\n");
+        return `mailto:${inbox}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      };
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const nameOk = validate(nameInput);
+        const emailOk = validate(emailInput);
+        if (!nameOk || !emailOk) {
+          (nameOk ? emailInput : nameInput).focus();
+          return;
+        }
+
+        const name = nameInput.value.trim();
+        const address = emailInput.value.trim();
+        const fallback = mailtoHref(name, address, notifyInput.checked);
+
+        if (!endpoint) {
+          window.location.href = fallback;
+          showStatus(
+            `<strong>Your email app should open with the note ready.</strong>` +
+              `Send it and you're on the list. Nothing opened? <a href="${fallback}">Try again</a> or write to <a href="mailto:${escapeHtml(inbox)}">${escapeHtml(inbox)}</a>.`,
+          );
+          return;
+        }
+
+        button.setAttribute("aria-busy", "true");
+        button.disabled = true;
+        buttonText.textContent = "Sending";
+
+        try {
+          const response = await fetch(endpoint, {
+            method: "POST",
+            body: new FormData(form),
+            headers: { Accept: "application/json" },
+          });
+          if (!response.ok) throw new Error(String(response.status));
+          form.dataset.state = "done";
+          showStatus(
+            `<strong>You're on the list, ${escapeHtml(name)}.</strong>` +
+              `You'll hear at ${escapeHtml(address)} when ${escapeHtml(product)} is released.`,
+            "done",
+          );
+          status.focus();
+        } catch {
+          showStatus(
+            `<strong>That didn't go through.</strong>` +
+              `Try again in a moment, or <a href="${fallback}">send it by email</a> instead.`,
+            "error",
+          );
+        } finally {
+          button.removeAttribute("aria-busy");
+          button.disabled = false;
+          buttonText.textContent = "Notify me";
+        }
+      });
+    });
+  };
+
+  initInterestForms();
+  document.addEventListener("astro:page-load", initInterestForms);
+</script>

@@ -1,0 +1,671 @@
+---
+/**
+ * One product page. Routed by src/pages/store/[...path].astro, which serves
+ * digital products at /store/<slug> and physical ones at
+ * /store/<category>/<slug>.
+ */
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Navbar from "../layout/Navbar.astro";
+import Footer from "../sections/Footer.astro";
+import ProjectCover from "../ui/ProjectCover.astro";
+import {
+  products,
+  categoryLabels,
+  categoryInfo,
+  formatPrice,
+  kindOf,
+  productHref,
+} from "../../data/products";
+import type { Product } from "../../data/products";
+import { CONTACT } from "../../data/site";
+import fs from "node:fs";
+import path from "node:path";
+
+interface Props {
+  product: Product;
+}
+
+const { product } = Astro.props;
+
+const coverPath = path.join(process.cwd(), "public", "store", `${product.slug}-main.png`);
+const src = fs.existsSync(coverPath) ? `/store/${product.slug}-main.png` : undefined;
+
+const price = formatPrice(product);
+
+// Free file: size and name for the download button, read from the real file so
+// a missing PDF fails the build instead of shipping a dead link.
+const download = product.download
+  ? (() => {
+      const file = path.join(process.cwd(), "public", product.download);
+      if (!fs.existsSync(file)) throw new Error(`${product.slug}: ${product.download} is missing from public/`);
+      const kb = fs.statSync(file).size / 1024;
+      return {
+        href: product.download,
+        name: path.basename(file),
+        size: kb > 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`,
+        type: path.extname(file).slice(1).toUpperCase(),
+      };
+    })()
+  : undefined;
+const physical = kindOf(product) === "physical";
+const emailHref = `mailto:${CONTACT.email}?subject=${encodeURIComponent(product.title)}`;
+// wa.me needs the international form: 0813 098 9138 becomes 234 813 098 9138.
+// Physical products without checkout are not stocked yet, so the button
+// counts interest over WhatsApp instead of saying "Coming soon".
+const askText = physical
+  ? `Hi, I'd like one of the ${product.title}. Let me know when it's available.`
+  : `Hi, I'd like to ask about ${product.title}.`;
+const askHref = `https://wa.me/2348130989138?text=${encodeURIComponent(askText)}`;
+
+// Physical products belong to a category page; digital ones to the store's
+// digital panel. Back links and "next" stay inside that group.
+const category = physical ? categoryInfo(product.category) : undefined;
+const backHref = category ? `/store/${product.category}` : "/store#digital";
+const backLabel = category ? `All ${category.title}` : "All digital products";
+
+// Next product in the same group, so a product page never dead-ends.
+const siblings = products.filter((p) =>
+  physical ? p.category === product.category : kindOf(p) === "digital",
+);
+const index = siblings.findIndex((p) => p.slug === product.slug);
+const next = siblings.length > 1 ? siblings[(index + 1) % siblings.length] : undefined;
+---
+
+<BaseLayout title={`${product.title} | vojmax store`} description={product.tagline}>
+  <Navbar alwaysVisible={true} homeSectionLinks={true} />
+
+  <main class="product pt-24 md:pt-28 pb-20">
+    <div class="container-fluid">
+      <a href={backHref} class="back-link">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path d="M19 12H5M12 19l-7-7 7-7"></path>
+        </svg>
+        {backLabel}
+      </a>
+
+      <div class="pd-top">
+        <div class="pd-cover">
+          <ProjectCover
+            title={product.title}
+            slug={product.slug}
+            hue={product.hue}
+            size="hero"
+            src={src}
+          />
+          {product.coverNote && <p class="pd-cover-note">{product.coverNote}</p>}
+        </div>
+
+        <!-- Buy box -->
+        <header class="pd-head">
+          <p class="pd-meta font-mono">
+            {product.brand && <span>{product.brand} · </span>}
+            <a href={backHref}>{categoryLabels[product.category]}</a>
+          </p>
+          <h1 class="pd-title font-display">{product.title}</h1>
+          <p class="pd-tagline">{product.tagline}</p>
+
+          <p class="pd-price font-display">{price}</p>
+          <p class="pd-format">{product.format}</p>
+          {product.leadTime && <p class="pd-lead">{product.leadTime}</p>}
+
+          <div class="pd-actions">
+            {
+              download ? (
+                <>
+                  <a href={download.href} download={download.name} class="pd-btn primary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />
+                    </svg>
+                    Download free {download.type}
+                  </a>
+                  <a href={askHref} class="pd-btn" target="_blank" rel="noopener">Ask about it</a>
+                </>
+              ) : product.checkout ? (
+                <a href={product.checkout} target="_blank" rel="noopener" class="pd-btn primary">
+                  {product.price === 0 ? "Get it free" : `Buy for ${price}`}
+                </a>
+              ) : (
+                physical ? (
+                  <a href={askHref} class="pd-btn primary" target="_blank" rel="noopener">I want one</a>
+                ) : (
+                  <>
+                    <span class="pd-btn disabled" aria-disabled="true">Coming soon</span>
+                    <a href={askHref} class="pd-btn" target="_blank" rel="noopener">Ask about it</a>
+                  </>
+                )
+              )
+            }
+            {
+              product.preview && (
+                <a href={product.preview} target="_blank" rel="noopener" class="pd-btn">
+                  Preview
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                    <path d="M15 3h6v6M10 14L21 3" />
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  </svg>
+                </a>
+              )
+            }
+          </div>
+
+          {
+            download && (
+              <p class="pd-fine">
+                {download.type}, {download.size}. Free to download, no sign-up.
+              </p>
+            )
+          }
+          {
+            product.checkout && (
+              <p class="pd-fine">
+                {physical
+                  ? "Checkout opens on a secure payment page. You get tracking by email once it ships."
+                  : "Checkout opens on a secure payment page. Files arrive by email once it goes through."}
+              </p>
+            )
+          }
+        </header>
+      </div>
+
+      <!-- Body -->
+      <div class="pd-body">
+        <article class="pd-prose">
+          <section>
+            <h2 class="pd-h2">About it</h2>
+            {product.description.map((para) => <p>{para}</p>)}
+          </section>
+
+          <section>
+            <h2 class="pd-h2">{physical ? "In the box" : "What's included"}</h2>
+            <ul class="pd-list">
+              {product.includes.map((item) => (
+                <li>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    aria-hidden="true"
+                  >
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {
+            product.specs && product.specs.length > 0 && (
+              <section>
+                <h2 class="pd-h2">Specs</h2>
+                <dl class="pd-specs">
+                  {product.specs.map(({ label, value }) => (
+                    <div class="spec-row">
+                      <dt>{label}</dt>
+                      <dd>{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+            )
+          }
+        </article>
+
+        <aside class="pd-aside">
+          {
+            product.audience && (
+              <div class="aside-block">
+                <h3 class="aside-label">Made for</h3>
+                <p class="aside-text">{product.audience}</p>
+              </div>
+            )
+          }
+          <div class="aside-block">
+            <h3 class="aside-label">Questions</h3>
+            <p class="aside-text">
+              {download ? (
+                <>Launching a site and want a second pair of eyes? <a href={emailHref}>Email me</a>.</>
+              ) : (
+                <>Not sure it fits? <a href={emailHref}>Email me</a> before you buy.</>
+              )}
+            </p>
+          </div>
+        </aside>
+      </div>
+
+      {
+        next && (
+          <a href={productHref(next)} class="next-product">
+            <span class="next-label font-mono">Next product</span>
+            <span class="next-title font-display">{next.title}</span>
+            <span class="next-tagline">{next.tagline}</span>
+            <span class="next-arrow" aria-hidden="true">&rarr;</span>
+          </a>
+        )
+      }
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    font-size: 0.88rem;
+    color: rgb(var(--muted));
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .back-link:hover {
+    color: rgb(var(--accent));
+  }
+
+  .back-link svg {
+    transition: transform 0.2s ease;
+  }
+
+  .back-link:hover svg {
+    transform: translateX(-3px);
+  }
+
+  /* Top: cover and buy box side by side */
+  .pd-top {
+    display: grid;
+    gap: clamp(2rem, 4vw, 3.5rem);
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    align-items: center;
+    margin-bottom: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  @media (max-width: 900px) {
+    .pd-top {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .pd-cover {
+    aspect-ratio: 4 / 3;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    border: 1px solid rgb(var(--border) / 0.1);
+  }
+
+  .pd-cover {
+    position: relative;
+  }
+
+  .pd-cover-note {
+    position: absolute;
+    left: 0.75rem;
+    bottom: 0.75rem;
+    margin: 0;
+    padding: 0.3rem 0.7rem;
+    border-radius: var(--radius-full);
+    background: rgb(var(--bg) / 0.72);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    font-size: 0.72rem;
+    color: rgb(var(--text) / 0.8);
+  }
+
+  .pd-meta {
+    margin: 0 0 1rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .pd-meta span,
+  .pd-meta a {
+    color: rgb(var(--accent));
+    text-decoration: none;
+  }
+
+  .pd-meta a:hover {
+    text-decoration: underline;
+  }
+
+  .pd-title {
+    margin: 0 0 0.9rem;
+    font-size: var(--step-4);
+    line-height: 1.06;
+    color: rgb(var(--text));
+  }
+
+  .pd-tagline {
+    margin: 0 0 1.5rem;
+    max-width: 48ch;
+    font-size: var(--step-1);
+    font-weight: 300;
+    line-height: 1.6;
+    color: rgb(var(--text) / 0.75);
+  }
+
+  .pd-price {
+    margin: 0;
+    font-size: var(--step-3);
+    color: rgb(var(--text));
+  }
+
+  .pd-format {
+    margin: 0.25rem 0 1.5rem;
+    font-size: 0.85rem;
+    color: rgb(var(--muted));
+  }
+
+  .pd-lead {
+    margin: -1rem 0 1.5rem;
+    font-size: 0.85rem;
+    color: rgb(var(--text) / 0.75);
+  }
+
+  .pd-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .pd-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.8rem 1.5rem;
+    border-radius: var(--radius-full);
+    border: 1px solid rgb(var(--border) / 0.18);
+    background: rgb(var(--panel));
+    color: rgb(var(--text));
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition:
+      border-color 0.2s ease,
+      color 0.2s ease,
+      filter 0.2s ease;
+  }
+
+  .pd-btn:hover {
+    border-color: rgb(var(--accent) / 0.5);
+    color: rgb(var(--accent));
+  }
+
+  .pd-btn.primary {
+    background: rgb(var(--accent));
+    border-color: rgb(var(--accent));
+    color: rgb(var(--bg));
+  }
+
+  .pd-btn.primary:hover {
+    color: rgb(var(--bg));
+    filter: brightness(1.1);
+  }
+
+  :global(html[data-theme="light"]) .pd-btn.primary,
+  :global(html[data-theme="light"]) .pd-btn.primary:hover {
+    color: #fff;
+  }
+
+  .pd-btn.disabled {
+    cursor: not-allowed;
+    color: rgb(var(--muted));
+    background: rgb(var(--panel2));
+  }
+
+  .pd-btn.disabled:hover {
+    border-color: rgb(var(--border) / 0.18);
+    color: rgb(var(--muted));
+  }
+
+  .pd-fine {
+    margin: 1rem 0 0;
+    max-width: 44ch;
+    font-size: 0.78rem;
+    color: rgb(var(--muted));
+  }
+
+  /* Body */
+  .pd-body {
+    display: grid;
+    gap: clamp(2rem, 4vw, 4rem);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 17rem);
+    align-items: start;
+  }
+
+  @media (max-width: 900px) {
+    .pd-body {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .pd-prose section {
+    margin-bottom: 2.75rem;
+  }
+
+  .pd-h2 {
+    margin: 0 0 1rem;
+    font-family: var(--font-display);
+    font-size: var(--step-1);
+    font-weight: 700;
+    color: rgb(var(--text));
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid rgb(var(--border) / 0.1);
+  }
+
+  .pd-prose p {
+    margin: 0 0 1.1rem;
+    max-width: 68ch;
+    font-size: var(--step-0);
+    font-weight: 300;
+    line-height: 1.78;
+    color: rgb(var(--text) / 0.82);
+  }
+
+  .pd-list {
+    display: grid;
+    gap: 0.85rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-width: 68ch;
+  }
+
+  .pd-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    font-size: 0.95rem;
+    font-weight: 300;
+    line-height: 1.6;
+    color: rgb(var(--text) / 0.82);
+  }
+
+  .pd-list svg {
+    flex-shrink: 0;
+    margin-top: 0.25rem;
+    color: rgb(var(--accent));
+  }
+
+  .pd-specs {
+    margin: 0;
+    max-width: 68ch;
+  }
+
+  .spec-row {
+    display: grid;
+    grid-template-columns: minmax(7rem, 12rem) 1fr;
+    gap: 1rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid rgb(var(--border) / 0.08);
+    font-size: 0.92rem;
+  }
+
+  .spec-row dt {
+    color: rgb(var(--muted));
+  }
+
+  .spec-row dd {
+    margin: 0;
+    color: rgb(var(--text) / 0.88);
+  }
+
+  .pd-aside {
+    display: grid;
+    gap: 1.5rem;
+    position: sticky;
+    top: 6rem;
+  }
+
+  @media (max-width: 900px) {
+    .pd-specs {
+    margin: 0;
+    max-width: 68ch;
+  }
+
+  .spec-row {
+    display: grid;
+    grid-template-columns: minmax(7rem, 12rem) 1fr;
+    gap: 1rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid rgb(var(--border) / 0.08);
+    font-size: 0.92rem;
+  }
+
+  .spec-row dt {
+    color: rgb(var(--muted));
+  }
+
+  .spec-row dd {
+    margin: 0;
+    color: rgb(var(--text) / 0.88);
+  }
+
+  .pd-aside {
+      position: static;
+    }
+  }
+
+  .aside-block {
+    padding: 1.15rem 1.25rem;
+    border-radius: var(--radius-lg);
+    background: rgb(var(--panel));
+    border: 1px solid rgb(var(--border) / 0.1);
+  }
+
+  .aside-label {
+    margin: 0 0 0.7rem;
+    font-family: var(--font-body);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgb(var(--accent));
+  }
+
+  .aside-text {
+    margin: 0;
+    font-size: 0.88rem;
+    font-weight: 300;
+    line-height: 1.6;
+    color: rgb(var(--text) / 0.8);
+  }
+
+  .aside-text a {
+    color: rgb(var(--accent));
+    text-decoration: none;
+  }
+
+  .aside-text a:hover {
+    text-decoration: underline;
+  }
+
+  /* Next */
+  .next-product {
+    position: relative;
+    display: block;
+    margin-top: clamp(3rem, 6vw, 5rem);
+    padding: clamp(1.75rem, 4vw, 2.5rem);
+    border-radius: var(--radius-xl);
+    background: rgb(var(--panel));
+    border: 1px solid rgb(var(--border) / 0.1);
+    text-decoration: none;
+    transition: border-color 0.25s ease;
+  }
+
+  .next-product:hover {
+    border-color: rgb(var(--accent) / 0.45);
+  }
+
+  .next-label {
+    display: block;
+    margin-bottom: 0.6rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgb(var(--accent));
+  }
+
+  .next-title {
+    display: block;
+    font-size: var(--step-2);
+    font-weight: 700;
+    color: rgb(var(--text));
+    margin-bottom: 0.4rem;
+  }
+
+  .next-tagline {
+    display: block;
+    max-width: 52ch;
+    font-size: 0.9rem;
+    font-weight: 300;
+    line-height: 1.6;
+    color: rgb(var(--text) / 0.68);
+  }
+
+  .next-arrow {
+    position: absolute;
+    top: 50%;
+    right: clamp(1.75rem, 4vw, 2.5rem);
+    transform: translateY(-50%);
+    font-size: 1.5rem;
+    color: rgb(var(--accent));
+    transition: transform 0.25s ease;
+  }
+
+  .next-product:hover .next-arrow {
+    transform: translateY(-50%) translateX(6px);
+  }
+
+  @media (max-width: 640px) {
+    .next-arrow {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .next-arrow,
+    .back-link svg {
+      transition: none;
+    }
+    .next-product:hover .next-arrow {
+      transform: translateY(-50%);
+    }
+    .back-link:hover svg {
+      transform: none;
+    }
+  }
+</style>

@@ -1,0 +1,25 @@
+---
+/**
+ * The VOJMAX mark: two strokes of a V under one flat top edge. Same paths as
+ * public/favicon.svg, cropped to the letter. Decorative; pair it with text.
+ */
+interface Props {
+  class?: string;
+}
+
+const { class: className = "" } = Astro.props;
+---
+
+<svg class={`vx-mark ${className}`} viewBox="12 15 40 34" aria-hidden="true" focusable="false">
+  <path d="M13 16h11l8 22-6 10z" fill="rgb(var(--accent))"></path>
+  <path d="M40 16h11L38 48H26l6-10z" fill="rgb(var(--text))"></path>
+</svg>
+
+<style>
+  .vx-mark {
+    display: inline-block;
+    height: 1em;
+    width: auto;
+    flex-shrink: 0;
+  }
+</style>

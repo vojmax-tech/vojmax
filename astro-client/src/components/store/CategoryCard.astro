@@ -1,0 +1,164 @@
+---
+/**
+ * A physical category on the store page (IEMs, Frames). Links to the category
+ * page, which explains the product type and lists what is in it.
+ */
+import ProjectCover from "../ui/ProjectCover.astro";
+import { products, formatPrice } from "../../data/products";
+import type { CategoryInfo } from "../../data/products";
+import fs from "node:fs";
+import path from "node:path";
+
+interface Props {
+  info: CategoryInfo;
+}
+
+const { info } = Astro.props;
+
+const items = products.filter((p) => p.category === info.category);
+const cheapest = [...items].sort((a, b) => a.price - b.price)[0];
+
+const src =
+  info.image && fs.existsSync(path.join(process.cwd(), "public", "store", info.image))
+    ? `/store/${info.image}`
+    : undefined;
+
+const count = `${items.length} ${items.length === 1 ? "product" : "products"}`;
+---
+
+<!-- `project-card` too, so ProjectCover's hover bloom picks this card up. -->
+<a href={`/store/${info.category}`} class="category-card project-card">
+  <div class="cc-cover">
+    <ProjectCover title={info.title} slug={info.category} hue={info.hue} src={src} />
+  </div>
+
+  <div class="cc-body">
+    <div class="cc-top">
+      <h3 class="cc-title font-display">{info.title}</h3>
+      <span class="cc-arrow" aria-hidden="true">&rarr;</span>
+    </div>
+    <p class="cc-tagline">{info.tagline}</p>
+    <p class="cc-meta font-mono">
+      <span>{count}</span>
+      {cheapest && <span>From {formatPrice(cheapest)}</span>}
+    </p>
+  </div>
+</a>
+
+<style>
+  .category-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    background: rgb(var(--panel));
+    border: 1px solid rgb(var(--border) / 0.12);
+    text-decoration: none;
+    transition:
+      border-color 0.3s ease,
+      transform 0.3s ease,
+      box-shadow 0.3s ease;
+  }
+
+  .category-card:hover {
+    border-color: rgb(var(--accent) / 0.5);
+    transform: translateY(-4px);
+    box-shadow: 0 22px 50px rgb(0 0 0 / 0.22);
+  }
+
+  .category-card:focus-visible {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .category-card:hover {
+      transform: none;
+    }
+  }
+
+  .cc-cover {
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-bottom: 1px solid rgb(var(--border) / 0.08);
+  }
+
+  .cc-cover :global(.cover-img) {
+    transition: transform 0.6s ease;
+  }
+
+  .category-card:hover .cc-cover :global(.cover-img) {
+    transform: scale(1.04);
+  }
+
+  .cc-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    padding: clamp(1.25rem, 3vw, 1.75rem);
+    flex: 1;
+  }
+
+  .cc-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .cc-title {
+    margin: 0;
+    font-size: clamp(1.5rem, 1.2rem + 1vw, 2.1rem);
+    line-height: 1.08;
+    padding-top: 0.2rem;
+    color: rgb(var(--text));
+  }
+
+  .cc-arrow {
+    display: grid;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1px solid rgb(var(--border) / 0.16);
+    font-size: 1.1rem;
+    color: rgb(var(--text));
+    transition:
+      background 0.25s ease,
+      color 0.25s ease,
+      transform 0.25s ease;
+  }
+
+  .category-card:hover .cc-arrow {
+    background: rgb(var(--accent));
+    border-color: rgb(var(--accent));
+    color: rgb(var(--bg));
+    transform: translateX(3px);
+  }
+
+  .cc-tagline {
+    margin: 0;
+    max-width: 52ch;
+    font-weight: 300;
+    line-height: 1.6;
+    color: rgb(var(--text) / 0.74);
+    flex: 1;
+  }
+
+  .cc-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.4rem 0 0;
+  }
+
+  .cc-meta span {
+    padding: 0.3rem 0.7rem;
+    border-radius: var(--radius-full);
+    background: rgb(var(--accent) / 0.1);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: rgb(var(--accent));
+  }
+</style>

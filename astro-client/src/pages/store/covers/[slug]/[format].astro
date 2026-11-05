@@ -1,0 +1,73 @@
+---
+/**
+ * Campaign covers for VOJMAX objects, one per URL at its exact export size:
+ *   /store/covers/<slug>/poster    1600 x 1000  store image, social preview, docs
+ *   /store/covers/<slug>/portrait  1080 x 1350  feed post
+ *   /store/covers/<slug>/plate     1600 x 1000  object only, no type: category
+ *                                               images that get cropped or captioned
+ *
+ * Not linked anywhere and kept out of search. See README ("Object covers")
+ * for the one-line export.
+ */
+import ObjectHead from "../../../../components/store/object/ObjectHead.astro";
+import ObjectCover from "../../../../components/store/object/ObjectCover.astro";
+import { products, isObject, fullName } from "../../../../data/products";
+import type { Product } from "../../../../data/products";
+import "../../../../styles/global.css";
+
+export const prerender = true;
+
+type Format = "poster" | "portrait" | "plate";
+
+const formats: Record<Format, { width: number; height: number; variant: "poster" | "portrait" | "card" }> = {
+  poster: { width: 1600, height: 1000, variant: "poster" },
+  portrait: { width: 1080, height: 1350, variant: "portrait" },
+  plate: { width: 1600, height: 1000, variant: "card" },
+};
+
+// getStaticPaths runs on its own and cannot see the constants above.
+export function getStaticPaths() {
+  return products.filter(isObject).flatMap((product) =>
+    (["poster", "portrait", "plate"] as const).map((format) => ({
+      params: { slug: product.slug, format },
+      props: { product, format },
+    })),
+  );
+}
+
+const { product, format } = Astro.props as { product: Product; format: Format };
+const { width, height, variant } = formats[format];
+const name = fullName(product);
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content={`width=${width}`} />
+    <title>{name} cover, {format}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <ObjectHead noindex />
+  </head>
+  <body>
+    <main style={`width: ${width}px; height: ${height}px;`}>
+      <ObjectCover product={product} variant={variant} id={format} label={`${name} cover`} />
+    </main>
+  </body>
+</html>
+
+<style>
+  body {
+    margin: 0;
+    background: #0b0d14;
+  }
+
+  main {
+    overflow: hidden;
+  }
+</style>

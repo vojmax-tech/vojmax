@@ -1,0 +1,366 @@
+/* Launch Checklist print styles. Tokens follow the site (global.css):
+   Space Grotesk + Poppins, navy #0B0F19, signal orange. Interior pages use
+   the site's light-theme orange (#EA580C), which holds up better on paper. */
+
+@font-face { font-family: "Space Grotesk"; font-weight: 500; src: url(fonts/space-grotesk-latin-500-normal.woff2); }
+@font-face { font-family: "Space Grotesk"; font-weight: 600; src: url(fonts/space-grotesk-latin-600-normal.woff2); }
+@font-face { font-family: "Space Grotesk"; font-weight: 700; src: url(fonts/space-grotesk-latin-700-normal.woff2); }
+@font-face { font-family: "Poppins"; font-weight: 300; src: url(fonts/poppins-latin-300-normal.woff2); }
+@font-face { font-family: "Poppins"; font-weight: 400; src: url(fonts/poppins-latin-400-normal.woff2); }
+@font-face { font-family: "Poppins"; font-weight: 500; src: url(fonts/poppins-latin-500-normal.woff2); }
+@font-face { font-family: "Poppins"; font-weight: 600; src: url(fonts/poppins-latin-600-normal.woff2); }
+
+:root {
+  --ink: #0b0f19;
+  --ink-2: #334155;
+  --muted: #5b6678;
+  --rule: #dfe3ea;
+  --rule-strong: #c3cad5;
+  --accent: #ea580c;
+  --signal: #ff7300;
+  --night: #0b0f19;
+  --night-2: #111827;
+  --paper: #ffffff;
+  --display: "Space Grotesk", system-ui, sans-serif;
+  --body: "Poppins", system-ui, sans-serif;
+  --mx: 18mm;
+}
+
+@page { size: A4; margin: 0; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: #6b7280;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+body { font-family: var(--body); color: var(--ink); font-size: 9.75pt; line-height: 1.42; }
+
+.page {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  overflow: hidden;
+  background: var(--paper);
+  break-after: page;
+  page-break-after: always;
+}
+
+@media screen { .page { margin: 0 auto 8mm; } }
+
+ul, ol { list-style: none; }
+
+/* ── Wordmark ─────────────────────────────────────────────────────────── */
+
+.wm { font-family: var(--display); font-weight: 700; letter-spacing: 0.04em; }
+.wm i { font-style: normal; color: var(--accent); }
+
+/* ── Running head / foot ──────────────────────────────────────────────── */
+
+.run-head {
+  position: absolute;
+  top: 12mm; left: var(--mx); right: var(--mx);
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding-bottom: 3mm;
+  border-bottom: 0.25mm solid var(--ink);
+}
+.run-head .wm { font-size: 10.5pt; }
+.crumb {
+  font-family: var(--display); font-weight: 500;
+  font-size: 8pt; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2);
+}
+.crumb b { color: var(--accent); font-weight: 600; margin-right: 0.8mm; }
+
+.run-foot {
+  position: absolute;
+  bottom: 11mm; left: var(--mx); right: var(--mx);
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-family: var(--display); font-weight: 500;
+  font-size: 7.75pt; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+}
+.folio { color: var(--ink); font-weight: 600; font-size: 8.5pt; }
+.folio em { font-style: normal; color: var(--muted); font-weight: 500; }
+
+.content {
+  position: absolute;
+  top: 28mm; bottom: 22mm; left: var(--mx); right: var(--mx);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.content > * { flex: none; }
+
+/* Ruled notes area that takes whatever room a page has left. build.py fills
+   it with as many whole lines as fit, and drops it if fewer than two do. */
+.fill { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; margin-top: 9mm; }
+.fill-lines { flex: 1 1 0; min-height: 0; overflow: hidden; }
+.fill-lines span { display: block; height: 10mm; border-bottom: 0.25mm solid var(--rule-strong); }
+.fill > .f-label { padding-bottom: 0.5mm; }
+
+a { color: inherit; text-decoration: none; }
+
+/* Drawn separator dot: the font subset has no U+00B7, so it copies badly as text. */
+.sep { display: inline-block; width: 0.7mm; height: 0.7mm; margin: 0 2mm 0.45mm; border-radius: 50%; background: currentColor; opacity: 0.6; vertical-align: middle; }
+
+/* ── Type ─────────────────────────────────────────────────────────────── */
+
+.eyebrow {
+  font-family: var(--display); font-weight: 600;
+  font-size: 8pt; letter-spacing: 0.16em; text-transform: uppercase; color: var(--signal);
+}
+.eyebrow.dark { color: var(--accent); margin-bottom: 3mm; }
+
+.page-title {
+  font-family: var(--display); font-weight: 700;
+  font-size: 26pt; line-height: 1.08; letter-spacing: -0.02em;
+  margin-bottom: 5mm;
+}
+
+.lead { font-size: 11pt; font-weight: 300; line-height: 1.6; color: var(--ink-2); max-width: 150mm; }
+
+/* ── Sections ─────────────────────────────────────────────────────────── */
+
+.section + .section { margin-top: 10mm; }
+
+.sec-head {
+  display: grid; grid-template-columns: 14mm 1fr; align-items: start;
+  margin-bottom: 4.5mm;
+}
+.sec-n {
+  font-family: var(--display); font-weight: 600; font-size: 13pt; line-height: 1.5;
+  color: var(--accent); letter-spacing: 0.02em;
+}
+.sec-head h2 {
+  font-family: var(--display); font-weight: 700;
+  font-size: 19pt; line-height: 1.15; letter-spacing: -0.015em;
+}
+.intro { margin-top: 1.6mm; font-size: 9.5pt; font-weight: 300; color: var(--ink-2); max-width: 140mm; line-height: 1.5; }
+
+.group-label {
+  margin: 4mm 0 2mm;
+  font-family: var(--display); font-weight: 600;
+  font-size: 7.75pt; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+}
+.sec-head + .group-label { margin-top: 0; }
+
+/* Checkbox. 5mm square, crisp at print and big enough for a pen. */
+.box {
+  flex: none;
+  display: inline-grid; place-items: center;
+  width: 5mm; height: 5mm;
+  border: 0.3mm solid var(--ink);
+  border-radius: 1mm;
+  background: #fff;
+}
+.box.lg { width: 6.5mm; height: 6.5mm; border-width: 0.35mm; border-radius: 1.2mm; }
+.box.done { background: var(--ink); }
+.box.done svg { width: 3.8mm; height: 3.8mm; fill: none; stroke: #fff; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.box.na { position: relative; }
+.box.na::after { content: ""; position: absolute; left: 0.9mm; right: 0.9mm; top: 50%; height: 0.35mm; margin-top: -0.175mm; background: var(--ink); }
+
+/* Item list: two columns reading down, rows aligned across. */
+.items {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(var(--rows), auto);
+  grid-auto-flow: column;
+  column-gap: 9mm;
+  border-top: 0.25mm solid var(--rule-strong);
+}
+.items li {
+  display: flex; align-items: flex-start; gap: 3.2mm;
+  padding: 2.3mm 0 2.3mm;
+  border-bottom: 0.2mm solid var(--rule);
+  min-height: 9.6mm;
+}
+.items .box { margin-top: 0.1mm; }
+.items .t { font-size: 9.75pt; line-height: 5mm; }
+
+/* Strip: a row of labelled boxes (widths, browsers). */
+.strip {
+  display: grid; grid-template-columns: repeat(var(--n), auto);
+  border: 0.25mm solid var(--rule-strong); border-radius: 2mm;
+  overflow: hidden;
+}
+.strip li {
+  display: grid; grid-template-columns: auto 1fr; column-gap: 2.6mm; align-items: center;
+  padding: 3mm 3.2mm;
+}
+.strip li + li { border-left: 0.2mm solid var(--rule); }
+.strip .box { grid-row: span 2; }
+.s-label { font-size: 9.5pt; font-weight: 500; line-height: 1.25; white-space: nowrap; }
+.s-note { font-family: var(--display); font-size: 7.5pt; letter-spacing: 0.04em; color: var(--muted); line-height: 1.3; }
+
+/* ── How to use ───────────────────────────────────────────────────────── */
+
+.steps {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 7mm;
+  margin: 7mm 0 6mm;
+  padding-top: 5mm; border-top: 0.25mm solid var(--rule-strong);
+}
+.step-n {
+  display: inline-grid; place-items: center;
+  width: 7mm; height: 7mm; border-radius: 50%;
+  border: 0.3mm solid var(--accent); color: var(--accent);
+  font-family: var(--display); font-weight: 600; font-size: 9pt;
+  margin-bottom: 3mm;
+}
+.steps h3 { font-family: var(--display); font-weight: 600; font-size: 11pt; line-height: 1.25; margin-bottom: 1.6mm; }
+.steps p { font-size: 9pt; font-weight: 300; color: var(--ink-2); line-height: 1.55; }
+
+.legend {
+  display: flex; gap: 9mm; align-items: center;
+  padding: 3.5mm 4.5mm; margin-bottom: 8mm;
+  background: #f4f6f9; border-radius: 2mm;
+  font-size: 9pt; color: var(--ink-2);
+}
+.legend > span { display: inline-flex; align-items: center; gap: 2.6mm; }
+
+.split { display: grid; grid-template-columns: 1.15fr 1fr; gap: 10mm; align-items: start; }
+
+.card { border: 0.25mm solid var(--rule-strong); border-radius: 2.5mm; padding: 5mm 5.5mm 2mm; }
+.card-title {
+  font-family: var(--display); font-weight: 600; font-size: 8pt;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent);
+  margin-bottom: 2mm;
+}
+.card-title.plain { padding-top: 5mm; }
+
+.field { display: grid; grid-template-rows: auto 1fr; padding: 2.2mm 0 0; }
+.f-label {
+  font-family: var(--display); font-weight: 600; font-size: 7.5pt;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+}
+.field .f-line { height: 8mm; border-bottom: 0.25mm solid var(--rule-strong); }
+
+.toc { border-top: 0.25mm solid var(--rule-strong); }
+.toc li { border-bottom: 0.2mm solid var(--rule); }
+.toc a {
+  display: grid; grid-template-columns: 9mm 1fr auto; align-items: baseline;
+  padding: 1.6mm 0;
+  font-size: 9.5pt;
+}
+.c-n, .c-p { font-family: var(--display); font-weight: 600; font-size: 8.5pt; }
+.c-n { color: var(--accent); }
+.c-p { color: var(--muted); }
+
+/* ── Tables (issues log, check-ins) ───────────────────────────────────── */
+
+.log { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.log th {
+  text-align: left; padding: 0 2.5mm 2mm;
+  font-family: var(--display); font-weight: 600; font-size: 7.5pt;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+  border-bottom: 0.25mm solid var(--rule-strong);
+}
+.log td { height: 10.5mm; padding: 0 2.5mm; border-bottom: 0.2mm solid var(--rule); vertical-align: middle; }
+.log td + td, .log th + th { border-left: 0.2mm solid var(--rule); }
+.log .num { width: 10mm; font-family: var(--display); font-size: 8.5pt; color: var(--muted); }
+.log .w-area { width: 34mm; }
+.log .w-owner { width: 30mm; }
+.log .ok { width: 15mm; text-align: center; }
+.log td.ok .box { vertical-align: middle; }
+.checkins td { height: 17mm; }
+.checkins .w-day { width: 20mm; }
+.checkins .w-date { width: 28mm; }
+.checkins .day { font-family: var(--display); font-weight: 600; font-size: 9.5pt; }
+
+/* ── Final pre-launch + launch record ─────────────────────────────────── */
+
+.final { border-top: 1.2mm solid var(--accent); padding-top: 6mm; }
+.final .sec-head h2 { font-size: 26pt; }
+.final .items { border-top-color: var(--ink); }
+.final .items li { min-height: 11.6mm; padding: 3.3mm 0; }
+.final .items .t { font-weight: 500; }
+
+.record {
+  margin-top: 8mm;
+  border: 0.4mm solid var(--ink); border-radius: 3mm;
+  padding: 5mm 6mm 5.5mm;
+}
+.record-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1mm; }
+.record-head .eyebrow { color: var(--accent); font-size: 9pt; }
+.record-note { font-size: 8.5pt; font-weight: 300; color: var(--muted); }
+.record-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 8mm; }
+.record .field .f-line { height: 11mm; border-bottom-color: var(--ink-2); }
+.record .field.wide { grid-column: 1 / -1; }
+.status {
+  display: flex; align-items: center; gap: 9mm;
+  margin-top: 6mm; padding-top: 5mm; border-top: 0.2mm solid var(--rule);
+}
+.status-opt {
+  display: inline-flex; align-items: center; gap: 3mm;
+  font-family: var(--display); font-weight: 700; font-size: 11pt;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+
+/* ── Handover notes ───────────────────────────────────────────────────── */
+
+.notes-block { margin-top: 7mm; }
+.notes-title {
+  font-family: var(--display); font-weight: 600; font-size: 8.5pt;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent);
+  padding-bottom: 1mm;
+}
+.lines span { display: block; height: 10mm; border-bottom: 0.25mm solid var(--rule-strong); }
+.follow li { display: flex; align-items: flex-end; gap: 3.5mm; height: 10mm; padding-bottom: 1.6mm; }
+.follow .f-line { flex: 1; border-bottom: 0.25mm solid var(--rule-strong); height: 100%; margin-bottom: -1.6mm; }
+
+/* ── Cover ────────────────────────────────────────────────────────────── */
+
+.cover, .back { background: var(--night); color: #f8fafc; }
+
+.cover-art { position: absolute; inset: 0 0 auto 0; height: 190mm; }
+.cover-art img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; display: block; }
+
+.cover-top {
+  position: absolute; top: 14mm; left: var(--mx); right: var(--mx);
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-family: var(--display); font-weight: 500; font-size: 8pt;
+  letter-spacing: 0.14em; text-transform: uppercase; color: rgba(248,250,252,0.7);
+}
+.cover-top .wm { font-size: 12pt; color: #f8fafc; letter-spacing: 0.04em; }
+.cover .wm i, .back .wm i { color: var(--signal); }
+
+.cover-body { position: absolute; left: var(--mx); right: var(--mx); bottom: 16mm; }
+.cover h1 {
+  margin: 4mm 0 6mm;
+  font-family: var(--display); font-weight: 700;
+  font-size: 58pt; line-height: 0.95; letter-spacing: -0.035em; text-transform: uppercase;
+}
+.cover-sub { font-size: 12.5pt; font-weight: 300; line-height: 1.55; color: rgba(248,250,252,0.78); max-width: 128mm; }
+
+.cover-meta {
+  margin-top: 14mm; padding-top: 5mm;
+  border-top: 0.25mm solid rgba(248,250,252,0.18);
+  display: flex; justify-content: space-between; align-items: flex-end;
+}
+.byline { display: grid; gap: 1mm; }
+.byline .wm { font-size: 14pt; }
+.byline span:last-child { font-size: 9.5pt; font-weight: 300; color: rgba(248,250,252,0.72); }
+.cover-meta dl { display: flex; gap: 9mm; }
+.cover-meta dt, .back-contact dt {
+  font-family: var(--display); font-weight: 500; font-size: 7pt;
+  letter-spacing: 0.14em; text-transform: uppercase; color: rgba(248,250,252,0.5);
+  margin-bottom: 1mm;
+}
+.cover-meta dd { font-family: var(--display); font-weight: 600; font-size: 10pt; }
+
+/* ── Back cover ───────────────────────────────────────────────────────── */
+
+.back-body { position: absolute; left: var(--mx); right: var(--mx); bottom: 46mm; }
+.back-body .wm { font-size: 13pt; }
+.back-line { display: block; width: 36mm; height: 0.5mm; margin-bottom: 12mm; background: var(--signal); box-shadow: 0 0 3mm rgba(255,115,0,0.55); }
+.back h2 {
+  margin: 8mm 0 5mm;
+  font-family: var(--display); font-weight: 700; font-size: 30pt; line-height: 1.05; letter-spacing: -0.025em;
+  max-width: 140mm;
+}
+.back-body p { font-size: 11.5pt; font-weight: 300; line-height: 1.6; color: rgba(248,250,252,0.78); max-width: 135mm; }
+.back-contact { display: flex; gap: 14mm; margin-top: 10mm; padding-top: 5mm; border-top: 0.25mm solid rgba(248,250,252,0.18); }
+.back-contact dd { font-family: var(--display); font-weight: 500; font-size: 12pt; }
+.back-legal {
+  position: absolute; left: var(--mx); right: var(--mx); bottom: 14mm;
+  font-size: 8pt; color: rgba(248,250,252,0.45);
+}

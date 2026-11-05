@@ -1,0 +1,266 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Navbar from "../components/layout/Navbar.astro";
+import ProductCard from "../components/ui/ProductCard.astro";
+import CategoryCard from "../components/store/CategoryCard.astro";
+import Footer from "../components/sections/Footer.astro";
+import ObjectCard from "../components/store/object/ObjectCard.astro";
+import ObjectHead from "../components/store/object/ObjectHead.astro";
+import { products, physicalCategories, kindOf, isObject } from "../data/products";
+
+// VOJMAX objects lead the store in their own section, in catalogue order.
+const objects = products.filter(isObject);
+const objectCount = `${objects.length} ${objects.length === 1 ? "object" : "objects"}`;
+
+// Physical products are reached through their category card; digital ones
+// are listed directly. Featured first, then catalogue order.
+const digital = products
+  .filter((p) => kindOf(p) === "digital")
+  .sort((a, b) => Number(!!b.featured) - Number(!!a.featured));
+
+const categoryCount = `${physicalCategories.length} ${physicalCategories.length === 1 ? "category" : "categories"}`;
+const digitalCount = `${digital.length} ${digital.length === 1 ? "item" : "items"}`;
+---
+
+<BaseLayout
+  title="Store | vojmax"
+  description="IEMs, wall objects, books and the digital kit behind my client work, from Victor James (vojmax)."
+>
+  <ObjectHead slot="head" />
+  <Navbar alwaysVisible={true} homeSectionLinks={true} />
+
+  <main class="pt-24 md:pt-28 pb-24 container-fluid min-h-screen">
+    <header class="store-head">
+      <h1 class="store-title font-display">Things I design and things I'd recommend.</h1>
+      <p class="store-lede">
+        Physical products, from in-ear monitors to wall objects and books, plus the digital kit
+        behind my client work. Checkout runs through a hosted payment page.
+      </p>
+
+      <nav class="store-jump" aria-label="Store sections">
+        {
+          objects.length > 0 && (
+            <a href="#objects">
+              <span class="jump-name">Objects</span>
+              <span class="jump-count font-mono">{objectCount}</span>
+            </a>
+          )
+        }
+        <a href="#products">
+          <span class="jump-name">Products</span>
+          <span class="jump-count font-mono">{categoryCount}</span>
+        </a>
+        <a href="#digital">
+          <span class="jump-name">Digital</span>
+          <span class="jump-count font-mono">{digitalCount}</span>
+        </a>
+      </nav>
+    </header>
+
+    {
+      objects.length > 0 && (
+        <section id="objects" class="store-section" aria-labelledby="objects-title">
+          <div class="section-head">
+            <div>
+              <h2 id="objects-title" class="section-title font-display">Objects</h2>
+            </div>
+            <p class="section-intro">
+              Physical things from VOJMAX, my design label: born on a screen,
+              built for physical space, released one at a time.
+            </p>
+          </div>
+          <div class="object-list">
+            {objects.map((product) => <ObjectCard product={product} />)}
+          </div>
+        </section>
+      )
+    }
+
+    {
+      physicalCategories.length > 0 && (
+        <section id="products" class="store-section" aria-labelledby="products-title">
+          <div class="section-head">
+            <div>
+              <h2 id="products-title" class="section-title font-display">Products</h2>
+            </div>
+            <p class="section-intro">
+              Things to hear, hang and colour in. Pick a category to see what it's
+              good for, what it isn't, and every product in it.
+            </p>
+          </div>
+          <div class="category-grid">
+            {physicalCategories.map((info) => <CategoryCard info={info} />)}
+          </div>
+        </section>
+      )
+    }
+
+    {
+      digital.length > 0 && (
+        <section id="digital" class="store-section digital-panel" aria-labelledby="digital-title">
+          <div class="section-head">
+            <div>
+              <h2 id="digital-title" class="section-title font-display">Digital</h2>
+            </div>
+            <p class="section-intro">
+              The templates, files and checklists I use on client projects. Paid
+              files arrive by email after checkout; free ones download straight away.
+            </p>
+          </div>
+          <div class="product-grid">
+            {digital.map((product) => <ProductCard {...product} />)}
+          </div>
+        </section>
+      )
+    }
+
+    <aside class="custom-note">
+      <p>
+        Looking for something that isn't here?
+        <a href="/contact">Tell me what you need.</a>
+      </p>
+    </aside>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .store-head {
+    max-width: 50rem;
+    margin-bottom: clamp(2.5rem, 5vw, 3.5rem);
+  }
+
+  .store-title {
+    margin: 0 0 1rem;
+    font-size: var(--step-4);
+    line-height: 1.08;
+    color: rgb(var(--text));
+  }
+
+  .store-lede {
+    margin: 0;
+    max-width: 54ch;
+    font-weight: 300;
+    line-height: 1.65;
+    color: rgb(var(--text) / 0.72);
+  }
+
+  .store-jump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1.75rem;
+  }
+
+  .store-jump a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.55rem 1.1rem;
+    border-radius: var(--radius-full);
+    border: 1px solid rgb(var(--border) / 0.14);
+    background: rgb(var(--panel));
+    text-decoration: none;
+    transition: border-color 0.2s ease;
+  }
+
+  .store-jump a:hover {
+    border-color: rgb(var(--accent) / 0.5);
+  }
+
+  .jump-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: rgb(var(--text));
+  }
+
+  .jump-count {
+    font-size: 0.7rem;
+    color: rgb(var(--muted));
+  }
+
+  .store-section {
+    scroll-margin-top: 6rem;
+  }
+
+  .store-section + .store-section {
+    margin-top: clamp(3.5rem, 7vw, 5.5rem);
+  }
+
+  .section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.75rem 2rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .section-title {
+    margin: 0;
+    font-size: var(--step-3);
+    line-height: 1;
+    color: rgb(var(--text));
+  }
+
+  .section-intro {
+    margin: 0;
+    max-width: 42ch;
+    font-size: 0.92rem;
+    font-weight: 300;
+    line-height: 1.6;
+    color: rgb(var(--muted));
+  }
+
+  /* One object runs wide; two or more sit side by side as a catalogue. */
+  .object-list {
+    display: grid;
+    gap: clamp(1.25rem, 2.5vw, 2rem);
+    grid-template-columns: repeat(auto-fit, minmax(min(30rem, 100%), 1fr));
+  }
+
+  .category-grid {
+    display: grid;
+    gap: clamp(1rem, 2vw, 1.5rem);
+    grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr));
+  }
+
+  /* Digital sits in its own panel so it never reads as part of Products. */
+  .digital-panel {
+    padding: clamp(1.25rem, 4vw, 2.5rem);
+    border-radius: var(--radius-xl);
+    background: rgb(var(--panel2));
+    border: 1px solid rgb(var(--border) / 0.1);
+  }
+
+  .product-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(17rem, 100%), 1fr));
+  }
+
+  .custom-note {
+    margin-top: clamp(3rem, 6vw, 4.5rem);
+    padding: 1.25rem 1.5rem;
+    border-radius: var(--radius-lg);
+    background: rgb(var(--panel) / 0.6);
+    border: 1px solid rgb(var(--border) / 0.1);
+  }
+
+  .custom-note p {
+    margin: 0;
+    font-weight: 300;
+    color: rgb(var(--text) / 0.8);
+  }
+
+  .custom-note a {
+    color: rgb(var(--accent));
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .custom-note a:hover {
+    text-decoration: underline;
+  }
+</style>

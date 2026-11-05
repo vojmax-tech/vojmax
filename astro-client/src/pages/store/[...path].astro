@@ -1,0 +1,45 @@
+---
+/**
+ * Every store page below /store:
+ *   /store/<category>          physical category page (IEMs, frames)
+ *   /store/<category>/<slug>   physical product
+ *   /store/<slug>              digital product
+ *
+ * Products with layout: "object" (VOJMAX objects) get ObjectPage instead of
+ * the standard ProductDetail.
+ */
+import CategoryPage from "../../components/store/CategoryPage.astro";
+import ProductDetail from "../../components/store/ProductDetail.astro";
+import ObjectPage from "../../components/store/object/ObjectPage.astro";
+import { products, physicalCategories, productHref, isObject } from "../../data/products";
+import type { CategoryInfo, Product } from "../../data/products";
+
+export const prerender = true;
+
+type Props = { info: CategoryInfo; product?: never } | { product: Product; info?: never };
+
+export function getStaticPaths() {
+  return [
+    ...physicalCategories.map((info) => ({
+      params: { path: info.category },
+      props: { info },
+    })),
+    ...products.map((product) => ({
+      params: { path: productHref(product).replace(/^\/store\//, "") },
+      props: { product },
+    })),
+  ];
+}
+
+const { info, product } = Astro.props;
+---
+
+{
+  info ? (
+    <CategoryPage info={info} />
+  ) : isObject(product!) ? (
+    <ObjectPage product={product!} />
+  ) : (
+    <ProductDetail product={product!} />
+  )
+}

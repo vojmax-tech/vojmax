@@ -1,0 +1,340 @@
+---
+/**
+ * A physical category page, e.g. /store/iems: what the product type is, its
+ * honest pros and cons, then every product in it.
+ */
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Navbar from "../layout/Navbar.astro";
+import Footer from "../sections/Footer.astro";
+import ProjectCover from "../ui/ProjectCover.astro";
+import ProductCard from "../ui/ProductCard.astro";
+import ObjectCard from "./object/ObjectCard.astro";
+import ObjectHead from "./object/ObjectHead.astro";
+import { products, isObject } from "../../data/products";
+import type { CategoryInfo } from "../../data/products";
+import fs from "node:fs";
+import path from "node:path";
+
+interface Props {
+  info: CategoryInfo;
+}
+
+const { info } = Astro.props;
+
+const items = products
+  .filter((p) => p.category === info.category)
+  .sort((a, b) => Number(!!b.featured) - Number(!!a.featured));
+
+const src =
+  info.image && fs.existsSync(path.join(process.cwd(), "public", "store", info.image))
+    ? `/store/${info.image}`
+    : undefined;
+
+const countLabel = `${items.length} ${items.length === 1 ? "product" : "products"}`;
+const hasProsCons = !!(info.pros?.length || info.cons?.length);
+---
+
+<BaseLayout
+  title={`${info.title} | vojmax store`}
+  description={info.tagline}
+>
+  <ObjectHead slot="head" />
+  <Navbar alwaysVisible={true} homeSectionLinks={true} />
+
+  <main class="pt-24 md:pt-28 pb-24 container-fluid">
+    <a href="/store" class="back-link">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+      </svg>
+      Store
+    </a>
+
+    <header class="cat-hero">
+      <div class="cat-text">
+        <p class="cat-eyebrow font-mono">Products</p>
+        <h1 class="cat-title font-display">{info.title}</h1>
+        {info.intro.map((para) => <p class="cat-intro">{para}</p>)}
+        {
+          items.length > 0 && (
+            <a href="#range" class="cat-jump">
+              {items.length === 1 ? "See the product" : `See all ${countLabel}`}
+              <span aria-hidden="true">&darr;</span>
+            </a>
+          )
+        }
+      </div>
+
+      <div class="cat-cover">
+        <ProjectCover title={info.title} slug={info.category} hue={info.hue} size="hero" src={src} />
+        {info.imageNote && <p class="cat-cover-note">{info.imageNote}</p>}
+      </div>
+    </header>
+
+    {
+      hasProsCons && (
+        <section class="cat-block" aria-labelledby="proscons-title">
+          <h2 id="proscons-title" class="block-title font-display">
+            Good to know before you buy
+          </h2>
+          <div class="proscons">
+            {info.pros && (
+              <div class="pc-card pc-pros">
+                <h3 class="pc-label">Advantages</h3>
+                <ul class="pc-list">
+                  {info.pros.map((item) => (
+                    <li>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {info.cons && (
+              <div class="pc-card pc-cons">
+                <h3 class="pc-label">Disadvantages</h3>
+                <ul class="pc-list">
+                  {info.cons.map((item) => (
+                    <li>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                        <path d="M5 12h14" />
+                      </svg>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </section>
+      )
+    }
+
+    <section id="range" class="cat-block" aria-labelledby="range-title">
+      <div class="block-head">
+        <h2 id="range-title" class="block-title font-display">The range</h2>
+        <span class="block-count font-mono">{countLabel}</span>
+      </div>
+      {
+        items.length > 0 ? (
+          <div class="product-grid">
+            {items.map((product) =>
+              isObject(product) ? (
+                <ObjectCard product={product} />
+              ) : (
+                <ProductCard {...product} />
+              ),
+            )}
+          </div>
+        ) : (
+          <p class="empty">Nothing here yet. <a href="/contact">Tell me what you'd want to see.</a></p>
+        )
+      }
+    </section>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    font-size: 0.88rem;
+    color: rgb(var(--muted));
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .back-link:hover {
+    color: rgb(var(--accent));
+  }
+
+  .cat-hero {
+    display: grid;
+    gap: clamp(2rem, 4vw, 3.5rem);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    align-items: center;
+    margin-bottom: clamp(3rem, 6vw, 5rem);
+  }
+
+  @media (max-width: 900px) {
+    .cat-hero {
+      grid-template-columns: 1fr;
+    }
+    .cat-cover {
+      order: -1;
+    }
+  }
+
+  .cat-eyebrow {
+    margin: 0 0 0.8rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgb(var(--accent));
+  }
+
+  .cat-title {
+    margin: 0 0 1.25rem;
+    font-size: var(--step-5, var(--step-4));
+    line-height: 1;
+    color: rgb(var(--text));
+  }
+
+  .cat-intro {
+    margin: 0 0 1rem;
+    max-width: 56ch;
+    font-weight: 300;
+    line-height: 1.7;
+    color: rgb(var(--text) / 0.78);
+  }
+
+  .cat-jump {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding: 0.7rem 1.3rem;
+    border-radius: var(--radius-full);
+    background: rgb(var(--accent));
+    color: rgb(var(--bg));
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: filter 0.2s ease;
+  }
+
+  .cat-jump:hover {
+    filter: brightness(1.1);
+  }
+
+  :global(html[data-theme="light"]) .cat-jump {
+    color: #fff;
+  }
+
+  .cat-cover {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    border: 1px solid rgb(var(--border) / 0.1);
+  }
+
+  .cat-cover-note {
+    position: absolute;
+    left: 0.75rem;
+    bottom: 0.75rem;
+    margin: 0;
+    padding: 0.3rem 0.7rem;
+    border-radius: var(--radius-full);
+    background: rgb(var(--bg) / 0.72);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    font-size: 0.72rem;
+    color: rgb(var(--text) / 0.8);
+  }
+
+  .cat-block + .cat-block {
+    margin-top: clamp(3rem, 6vw, 4.5rem);
+  }
+
+  .block-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid rgb(var(--border) / 0.1);
+  }
+
+  .block-title {
+    margin: 0 0 1.5rem;
+    font-size: var(--step-2);
+    color: rgb(var(--text));
+  }
+
+  .block-head .block-title {
+    margin: 0;
+  }
+
+  .block-count {
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgb(var(--muted));
+  }
+
+  .proscons {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+  }
+
+  /* Fixed green and red, not the accent, so the two lists never look alike. */
+  .pc-card {
+    --tone: 52 190 130;
+    padding: clamp(1.25rem, 3vw, 1.75rem);
+    border-radius: var(--radius-lg);
+    background: rgb(var(--panel));
+    border: 1px solid rgb(var(--border) / 0.1);
+    border-top: 3px solid rgb(var(--tone));
+  }
+
+  .pc-cons {
+    --tone: 235 92 84;
+  }
+
+  .pc-label {
+    margin: 0 0 1.1rem;
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgb(var(--tone));
+  }
+
+  .pc-list {
+    display: grid;
+    gap: 0.9rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .pc-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    font-size: 0.93rem;
+    font-weight: 300;
+    line-height: 1.6;
+    color: rgb(var(--text) / 0.84);
+  }
+
+  .pc-list svg {
+    flex-shrink: 0;
+    margin-top: 0.25rem;
+    color: rgb(var(--tone));
+  }
+
+  .product-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(19rem, 100%), 1fr));
+  }
+
+  .empty {
+    color: rgb(var(--muted));
+  }
+
+  .empty a {
+    color: rgb(var(--accent));
+  }
+</style>

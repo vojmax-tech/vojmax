@@ -5,11 +5,14 @@ import { SITE } from "../data/site";
 interface Props {
   title?: string;
   description?: string;
+  /** Social preview image, a path under public/. Defaults to the site image. */
+  image?: string;
 }
 
 const {
   title = `${SITE.handle} | ${SITE.name}`,
   description = SITE.description,
+  image = "/hero-ai.png",
 } = Astro.props;
 
 const canonical = new URL(Astro.url.pathname, SITE.url).href;
@@ -40,11 +43,14 @@ const canonical = new URL(Astro.url.pathname, SITE.url).href;
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonical} />
-    <meta property="og:image" content={new URL("/hero-ai.png", SITE.url).href} />
+    <meta property="og:image" content={new URL(image, SITE.url).href} />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
+
+    <!-- Page-specific head tags (extra fonts, noindex). -->
+    <slot name="head" />
 
     <script
       type="application/ld+json"

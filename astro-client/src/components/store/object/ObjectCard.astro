@@ -1,0 +1,250 @@
+---
+/**
+ * Catalogue entry for a VOJMAX object: reads like an index card in a
+ * collection rather than a shop tile. Lays out side by side when it has room
+ * (the store page) and stacks in a grid (category pages).
+ */
+import ObjectCover from "./ObjectCover.astro";
+import VxMark from "./VxMark.astro";
+import {
+  formatPrice,
+  fullName,
+  productHref,
+  productStatus,
+} from "../../../data/products";
+import type { Product } from "../../../data/products";
+
+interface Props {
+  product: Product;
+}
+
+const { product } = Astro.props;
+
+const price = formatPrice(product);
+const status = productStatus(product);
+---
+
+<article class="oc-card-wrap">
+  <a
+    href={productHref(product)}
+    class="oc-card vx-world"
+    aria-label={`${fullName(product)}. ${status}. ${price}.`}
+  >
+    <div class="oc-card-art" style={`view-transition-name: object-${product.slug};`}>
+      <ObjectCover product={product} variant="card" id={`card-${product.slug}`} />
+    </div>
+
+    <div class="oc-card-body">
+      <p class="oc-card-index vx-tech" aria-hidden="true">
+        <span>{product.model}</span>
+      </p>
+
+      <div class="oc-card-name">
+        <p class="oc-card-label font-display">
+          <VxMark />
+          {product.label}
+        </p>
+        <h3 class="oc-card-title font-display">{product.title}</h3>
+      </div>
+
+      <p class="oc-card-tagline">{product.tagline}</p>
+
+      <div class="oc-card-foot">
+        <span class="oc-card-status vx-tech">
+          <span class="oc-card-dot" aria-hidden="true"></span>
+          {status}
+        </span>
+        <span class="oc-card-price font-display">{price}</span>
+      </div>
+
+      <span class="oc-card-go vx-tech" aria-hidden="true">
+        View object
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M13 6l6 6-6 6"></path>
+        </svg>
+      </span>
+    </div>
+  </a>
+</article>
+
+<style>
+  .oc-card-wrap {
+    container-type: inline-size;
+  }
+
+  .oc-card {
+    display: grid;
+    grid-template-columns: 1fr;
+    overflow: hidden;
+    border-radius: 22px;
+    border: 1px solid rgb(var(--border) / 0.14);
+    text-decoration: none;
+    box-shadow: 0 30px 80px -40px rgb(0 0 0 / 0.6);
+    transition:
+      border-color 0.4s ease,
+      box-shadow 0.4s ease;
+  }
+
+  .oc-card:hover {
+    border-color: rgb(var(--accent) / 0.55);
+    box-shadow: 0 34px 90px -40px rgb(0 0 0 / 0.75);
+  }
+
+  .oc-card-art {
+    aspect-ratio: 16 / 10;
+    border-bottom: 1px solid rgb(var(--border) / 0.12);
+  }
+
+  /* The entry beside the art already names it; keep the art to the object. */
+  .oc-card-art :global(.oc-top) {
+    display: none;
+  }
+
+  /* The object lifts a touch and the grid drifts on hover. */
+  .oc-card:hover .oc-card-art :global(.oc) {
+    --lift: -6px;
+    --gx: -6;
+    --gy: -4;
+  }
+
+  .oc-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    padding: clamp(1.25rem, 4cqi, 2rem);
+  }
+
+  .oc-card-index {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid rgb(var(--border) / 0.12);
+    color: rgb(var(--muted));
+  }
+
+  .oc-card-name {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .oc-card-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    margin: 0;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.28em;
+    color: rgb(var(--text));
+  }
+
+  .oc-card-title {
+    margin: 0;
+    font-size: clamp(2.4rem, 11cqi, 4.2rem);
+    font-weight: 700;
+    line-height: 0.88;
+    letter-spacing: -0.045em;
+    color: rgb(var(--text));
+  }
+
+  .oc-card-tagline {
+    margin: 0;
+    max-width: 42ch;
+    font-size: 0.9rem;
+    font-weight: 300;
+    line-height: 1.6;
+    color: rgb(var(--muted));
+  }
+
+  .oc-card-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid rgb(var(--border) / 0.12);
+  }
+
+  .oc-card-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.45rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid rgb(var(--border) / 0.2);
+    font-size: 0.64rem;
+    color: rgb(var(--text) / 0.88);
+  }
+
+  .oc-card-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgb(var(--accent));
+    box-shadow: 0 0 0 3px rgb(var(--accent) / 0.18);
+  }
+
+  .oc-card-price {
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: rgb(var(--text));
+  }
+
+  .oc-card-go {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgb(var(--muted));
+    transition: color 0.3s ease;
+  }
+
+  .oc-card-go svg {
+    transition: transform 0.3s ease;
+  }
+
+  .oc-card:hover .oc-card-go {
+    color: rgb(var(--accent));
+  }
+
+  .oc-card:hover .oc-card-go svg {
+    transform: translateX(4px);
+  }
+
+  /* Wide: art on the left, the entry on the right. */
+  @container (min-width: 760px) {
+    .oc-card {
+      grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    }
+
+    .oc-card-art {
+      aspect-ratio: auto;
+      min-height: 26rem;
+      border-bottom: 0;
+      border-right: 1px solid rgb(var(--border) / 0.12);
+    }
+
+    .oc-card-body {
+      padding: 2rem 2rem 1.75rem;
+    }
+
+    .oc-card-title {
+      font-size: clamp(3rem, 7.5cqi, 5.2rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .oc-card:hover .oc-card-art :global(.oc) {
+      --lift: 0px;
+      --gx: 0;
+      --gy: 0;
+    }
+    .oc-card:hover .oc-card-go svg {
+      transform: none;
+    }
+  }
+</style>

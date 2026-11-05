@@ -1,0 +1,406 @@
+---
+/**
+ * VOJMAX BOOK 01, open spread seen from above. A concept visualisation of
+ * the colouring book, not a render of a printed sample.
+ *
+ * The left page is an interface drawn as line art and partly coloured in:
+ * the orange circle is filled, the selected shape is still empty. The right
+ * page is untouched line art of the tool glyphs, with one circle half
+ * hatched in pencil. Nothing here states page count, size or paper.
+ *
+ * Same props and coordinate box (1000 x 700) as FrameDrawing, so ObjectCover
+ * and the gallery treat both alike. The spread sits between x 138-862 and
+ * y 138-578.
+ */
+interface Props {
+  /** Unique per page: prefixes gradient, clip and filter ids. */
+  id: string;
+  /** "render" is the shaded object; "outline" is line work only. */
+  mode?: "render" | "outline";
+  annotate?: boolean;
+  /** Soft shadow on the surface under the book. */
+  shadow?: boolean;
+  /** Draw the lines in once when the drawing scrolls into view. */
+  draw?: boolean;
+  /** Crop to part of the drawing. Defaults to the whole box. */
+  viewBox?: string;
+  /** Accessible description. Omit when the drawing is decorative. */
+  label?: string;
+  class?: string;
+}
+
+const {
+  id,
+  mode = "render",
+  annotate = false,
+  shadow = true,
+  draw = false,
+  viewBox = "0 0 1000 700",
+  label,
+  class: className = "",
+} = Astro.props;
+
+const render = mode === "render";
+
+const rr = (x: number, y: number, w: number, h: number, r: number) =>
+  `M${x + r} ${y}H${x + w - r}A${r} ${r} 0 0 1 ${x + w} ${y + r}V${y + h - r}` +
+  `A${r} ${r} 0 0 1 ${x + w - r} ${y + h}H${x + r}A${r} ${r} 0 0 1 ${x} ${y + h - r}` +
+  `V${y + r}A${r} ${r} 0 0 1 ${x + r} ${y}Z`;
+
+const COVER = { x: 138, y: 138, w: 724, h: 440, r: 10 };
+const SPINE = 500;
+// Pages dip slightly toward the spine, as an open book does.
+const LEFT_PAGE = `M150 154Q330 144 ${SPINE} 164V566Q330 552 150 562Z`;
+const RIGHT_PAGE = `M850 154Q670 144 ${SPINE} 164V566Q670 552 850 562Z`;
+
+// Left page: the interface, partly coloured.
+const BODY = { x: 196, y: 212, w: 262, h: 196, r: 14 };
+const BOARD = { x: 230, y: 236, w: 160, h: 148 };
+const DISC = { cx: 286, cy: 304, r: 36 };
+const SHAPE = { x: 306, y: 278, w: 62, h: 78, r: 9 };
+const SEL = { x: SHAPE.x - 3, y: SHAPE.y - 3, w: SHAPE.w + 6, h: SHAPE.h + 6 };
+const selHandles: [number, number][] = [0, 0.5, 1].flatMap((fx) =>
+  [0, 0.5, 1]
+    .filter((fy) => !(fx === 0.5 && fy === 0.5))
+    .map((fy): [number, number] => [SEL.x + SEL.w * fx, SEL.y + SEL.h * fy]),
+);
+
+// Right page: the tool glyphs from FRAME 01, drawn large in circles.
+const tools = [
+  "M-5 -8V6L-1.4 2.6L1.4 8.6L4 7.4L1.2 1.6H6Z",
+  "M0 -8L6 1L2 8H-2L-6 1Z M0 -8V2 M-2 8H2",
+  "M-7 -6H7V6H-7Z",
+  "M7 0A7 7 0 1 1 -7 0A7 7 0 1 1 7 0Z",
+  "M-6 -7H6 M0 -7V8 M-2.5 8H2.5",
+  "M4 -1A5 5 0 1 1 -6 -1A5 5 0 1 1 4 -1Z M2.6 2.6L7 7",
+];
+const cells = tools.map((d, i) => ({ d, cx: 590 + (i % 3) * 86, cy: 262 + Math.floor(i / 3) * 104 }));
+const HATCHED = cells[3];
+const hatch = Array.from({ length: 12 }, (_, k) => -44 + k * 6);
+
+const lines = [
+  rr(COVER.x, COVER.y, COVER.w, COVER.h, COVER.r),
+  LEFT_PAGE,
+  RIGHT_PAGE,
+  rr(BODY.x, BODY.y, BODY.w, BODY.h, BODY.r),
+];
+
+const a11y = label ? { role: "img", "aria-label": label } : { "aria-hidden": "true" };
+const [, , vbW, vbH] = viewBox.split(/\s+/).map(Number);
+const u = (name: string) => `url(#${id}-${name})`;
+---
+
+<div
+  class:list={["bd", `bd--${mode}`, { "bd--draw": draw }, className]}
+  style={`aspect-ratio: ${vbW} / ${vbH};`}
+>
+  <svg viewBox={viewBox} preserveAspectRatio="xMidYMid meet" focusable="false" {...a11y}>
+    <defs>
+      <linearGradient id={`${id}-cover`} x1="0" y1="0" x2="0.3" y2="1">
+        <stop offset="0" stop-color="#232a3b" />
+        <stop offset="1" stop-color="#10131c" />
+      </linearGradient>
+      <linearGradient id={`${id}-gutter-l`} x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#f1f3f6" />
+        <stop offset="0.82" stop-color="#e7eaef" />
+        <stop offset="1" stop-color="#bfc5d0" />
+      </linearGradient>
+      <linearGradient id={`${id}-gutter-r`} x1="1" y1="0" x2="0" y2="0">
+        <stop offset="0" stop-color="#eceef2" />
+        <stop offset="0.82" stop-color="#e2e5eb" />
+        <stop offset="1" stop-color="#b8bfcb" />
+      </linearGradient>
+      <clipPath id={`${id}-hatch`}>
+        <circle cx={HATCHED.cx} cy={HATCHED.cy} r="34" />
+      </clipPath>
+      <filter id={`${id}-blur`} x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="18" />
+      </filter>
+    </defs>
+
+    {
+      render && (
+        <g class="bd-object">
+          {shadow && (
+            <rect
+              x={COVER.x + 10}
+              y={COVER.y + 26}
+              width={COVER.w}
+              height={COVER.h}
+              rx={COVER.r}
+              fill="#000"
+              opacity="0.6"
+              filter={u("blur")}
+            />
+          )}
+
+          {/* Cover boards, then the page block stepping down to the top pages. */}
+          <rect x={COVER.x} y={COVER.y} width={COVER.w} height={COVER.h} rx={COVER.r} fill={u("cover")} />
+          <path d={`M${COVER.x + COVER.r} ${COVER.y + 1}H${COVER.x + COVER.w - COVER.r}`} stroke="#fff" stroke-opacity="0.18" />
+          {[4, 3, 2, 1].map((step) => (
+            <g transform={`translate(0 ${step * 2.2})`}>
+              <path d={LEFT_PAGE} transform={`translate(${-step * 1.6} 0)`} fill="#c9ced8" stroke="#9aa2b2" stroke-width="0.6" />
+              <path d={RIGHT_PAGE} transform={`translate(${step * 1.6} 0)`} fill="#c9ced8" stroke="#9aa2b2" stroke-width="0.6" />
+            </g>
+          ))}
+          <path d={LEFT_PAGE} fill={u("gutter-l")} />
+          <path d={RIGHT_PAGE} fill={u("gutter-r")} />
+
+          {/* Colour already laid down on the left page. */}
+          <rect x={BODY.x} y={BODY.y} width={BODY.w} height={BODY.h} rx={BODY.r} fill="#151a28" />
+          <rect x={BOARD.x} y={BOARD.y} width={BOARD.w} height={BOARD.h} fill="#f4f5f8" />
+          <circle cx={DISC.cx} cy={DISC.cy} r={DISC.r} fill="#ff7300" />
+          <rect x={BODY.x + 4} y={BODY.y + 30} width="22" height="22" rx="4" fill="#ff7300" />
+
+          {/* Pencil hatching, half way through one circle on the right. */}
+          <g clip-path={u("hatch")} stroke="#ff7300" stroke-width="2.4" stroke-linecap="round" opacity="0.85">
+            {hatch.map((k) => (
+              <path d={`M${HATCHED.cx + k - 30} ${HATCHED.cy + 36}L${HATCHED.cx + k + 18} ${HATCHED.cy - 36}`} />
+            ))}
+          </g>
+        </g>
+      )
+    }
+
+    {/* Line art: printed ink on the render, the drawing itself in outline. */}
+    <g class="bd-ink" fill="none" stroke-linejoin="round" stroke-linecap="round">
+      {/* Left page: the interface */}
+      <path d={`M${BODY.x + 30} ${BODY.y}V${BODY.y + BODY.h}M${BODY.x + BODY.w - 62} ${BODY.y}V${BODY.y + BODY.h}`} />
+      <rect x={BOARD.x} y={BOARD.y} width={BOARD.w} height={BOARD.h} />
+      <circle cx={DISC.cx} cy={DISC.cy} r={DISC.r} />
+      <rect x={SHAPE.x} y={SHAPE.y} width={SHAPE.w} height={SHAPE.h} rx={SHAPE.r} />
+      <rect class="bd-sel" x={SEL.x} y={SEL.y} width={SEL.w} height={SEL.h} />
+      {selHandles.map(([x, y]) => (
+        <rect class="bd-sel" x={x - 2.5} y={y - 2.5} width="5" height="5" />
+      ))}
+      {[0, 1, 2, 3].map((i) => (
+        <circle cx={BODY.x + 15} cy={BODY.y + 41 + i * 30} r="6" />
+      ))}
+      {[0, 1, 2, 3].map((i) => (
+        <path d={`M${BODY.x + BODY.w - 52} ${BODY.y + 28 + i * 18}H${BODY.x + BODY.w - 14}`} />
+      ))}
+      <path d="M196 450H340M196 468H290" />
+
+      {/* Right page: tool glyphs */}
+      {cells.map(({ d, cx, cy }) => (
+        <g>
+          <circle cx={cx} cy={cy} r="34" />
+          <path d={d} transform={`translate(${cx} ${cy}) scale(2.2)`} class="bd-glyph" />
+        </g>
+      ))}
+      <path d="M560 470H820" stroke-dasharray="2 6" />
+    </g>
+
+    {
+      render && (
+        <g class="bd-folio" fill="#8a93a6">
+          <text x="186" y="532">01</text>
+          <text x="814" y="532" text-anchor="end">02</text>
+        </g>
+      )
+    }
+
+    <g class="bd-lines" fill="none" stroke-linejoin="round">
+      {lines.map((d) => <path d={d} pathLength="1" />)}
+      <path d={`M${SPINE} 164V566`} pathLength="1" />
+    </g>
+
+    {
+      annotate && (
+        <g class="bd-notes" fill="none">
+          <path class="bd-guide" d={`M${COVER.x} 102V132M${COVER.x + COVER.w} 102V132`} stroke-dasharray="3 4" />
+          <path class="bd-dim" d={`M${COVER.x} 110H${COVER.x + COVER.w}`} />
+          <path class="bd-tick" d={`M${COVER.x} 102V118M${COVER.x + COVER.w} 102V118`} />
+
+          <path class="bd-leader" d={`M${DISC.cx - 20} ${DISC.cy}H104`} />
+          <circle class="bd-node" cx={DISC.cx - 20} cy={DISC.cy} r="3.5" />
+
+          <path class="bd-leader" d={`M${cells[2].cx + 20} ${cells[2].cy}H896`} />
+          <circle class="bd-node" cx={cells[2].cx + 20} cy={cells[2].cy} r="3.5" />
+
+          <path class="bd-leader" d={`M${SPINE} 540V636`} />
+          <circle class="bd-node" cx={SPINE} cy="540" r="3.5" />
+        </g>
+      )
+    }
+  </svg>
+
+  {
+    annotate && (
+      <div class="bd-labels" aria-hidden="true">
+        <span class="bd-label vx-tech" style="left: 50%; top: 15.7%; transform: translate(-50%, -135%);">
+          Colouring book
+        </span>
+        <span class="bd-label vx-tech" style="right: 89.6%; top: 43.4%; transform: translate(-0.5rem, -50%);">
+          Coloured
+        </span>
+        <span class="bd-label vx-tech" style="left: 89.6%; top: 37.4%; transform: translate(0.5rem, -50%);">
+          Line art
+        </span>
+        <span class="bd-label bd-label--accent vx-tech" style="left: 50%; top: 90.9%; transform: translate(-50%, 0.35rem);">
+          Spread
+        </span>
+      </div>
+    )
+  }
+</div>
+
+<style>
+  .bd {
+    position: relative;
+    width: 100%;
+    container-type: inline-size;
+  }
+
+  .bd svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .bd-folio {
+    font-family: var(--font-tech, ui-monospace, monospace);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+  }
+
+  /* Ink: printed line art on the render, the drawing itself in outline. */
+  .bd-ink {
+    stroke: #1b2030;
+    stroke-width: 1.4;
+  }
+
+  .bd-ink * {
+    vector-effect: non-scaling-stroke;
+  }
+
+  .bd-ink .bd-sel {
+    stroke: #ff7300;
+  }
+
+  .bd--outline .bd-ink {
+    stroke: rgb(var(--muted) / 0.45);
+    stroke-width: 1.1;
+  }
+
+  .bd--outline .bd-ink .bd-sel {
+    stroke: rgb(var(--accent) / 0.8);
+  }
+
+  /* Structure: traced during the draw-in only on the render. */
+  .bd-lines path {
+    stroke: rgb(var(--text) / 0);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .bd--outline .bd-lines path {
+    stroke: rgb(var(--muted) / 0.62);
+    stroke-width: 1.1;
+  }
+
+  .bd-notes * {
+    vector-effect: non-scaling-stroke;
+    stroke-width: 1;
+  }
+
+  .bd-guide {
+    stroke: rgb(var(--border) / 0.3);
+  }
+
+  .bd-dim,
+  .bd-leader {
+    stroke: rgb(var(--muted) / 0.6);
+  }
+
+  .bd-tick {
+    stroke: rgb(var(--accent));
+  }
+
+  .bd-node {
+    fill: rgb(var(--accent));
+    stroke: none;
+  }
+
+  .bd-labels {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .bd-label {
+    position: absolute;
+    font-size: max(0.6rem, 1.05cqi);
+    white-space: nowrap;
+    color: rgb(var(--muted));
+  }
+
+  .bd-label--accent {
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    background: rgb(var(--accent));
+    color: rgb(var(--bg));
+    letter-spacing: 0.1em;
+  }
+
+  @container (max-width: 480px) {
+    .bd-notes,
+    .bd-labels {
+      display: none;
+    }
+  }
+
+  /* Draw-in, same timing as FrameDrawing. */
+  .bd--draw .bd-lines path {
+    stroke: rgb(var(--text) / 0.55);
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+
+  .bd--draw .bd-object,
+  .bd--draw .bd-ink,
+  .bd--draw .bd-folio,
+  .bd--draw .bd-notes,
+  .bd--draw .bd-labels {
+    opacity: 0;
+  }
+
+  :global(.reveal-visible) .bd--draw .bd-lines path {
+    stroke: rgb(var(--text) / 0);
+    stroke-dashoffset: 0;
+    transition:
+      stroke-dashoffset 1.6s cubic-bezier(0.65, 0, 0.35, 1) 0.15s,
+      stroke 1.2s ease 1.6s;
+  }
+
+  :global(.reveal-visible) .bd--draw .bd-object,
+  :global(.reveal-visible) .bd--draw .bd-ink,
+  :global(.reveal-visible) .bd--draw .bd-folio {
+    opacity: 1;
+    transition: opacity 1.2s ease 0.9s;
+  }
+
+  :global(.reveal-visible) .bd--draw .bd-notes,
+  :global(.reveal-visible) .bd--draw .bd-labels {
+    opacity: 1;
+    transition: opacity 0.8s ease 1.6s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bd--draw .bd-lines path {
+      stroke: rgb(var(--text) / 0);
+      stroke-dashoffset: 0;
+    }
+    .bd--draw .bd-object,
+    .bd--draw .bd-ink,
+    .bd--draw .bd-folio,
+    .bd--draw .bd-notes,
+    .bd--draw .bd-labels {
+      opacity: 1;
+    }
+    :global(.reveal-visible) .bd--draw * {
+      transition: none !important;
+    }
+  }
+</style>

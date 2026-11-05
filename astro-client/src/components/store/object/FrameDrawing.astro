@@ -1,0 +1,582 @@
+---
+/**
+ * VOJMAX FRAME 01, front view. A concept visualisation of the wall object,
+ * not a render of a real sample.
+ *
+ * The object is a deep, soft-cornered frame whose face is laid out like a
+ * piece of creative software: a document bar across the top, a tool rail on
+ * the left, a panel on the right and a light canvas at the centre, holding a
+ * small composition with one shape selected. Nothing here states
+ * measurements or materials.
+ *
+ * Coordinates live in a 1000 x 700 box. The object sits between x 170-830
+ * and y 100-570; the margins hold its depth, its shadow on the wall and the
+ * annotation leaders.
+ *
+ * `annotate` adds a drawing layer on top: a dimension line with no figures
+ * and leaders naming the parts. Labels are HTML so they stay legible at any
+ * size, and they hide when the drawing gets too small to carry them.
+ */
+interface Props {
+  /** Unique per page: prefixes gradient, clip and filter ids. */
+  id: string;
+  /** "render" is the shaded object; "outline" is line work only. */
+  mode?: "render" | "outline";
+  annotate?: boolean;
+  /** The object's soft shadow on the wall behind it. */
+  shadow?: boolean;
+  /** Draw the lines in once when the drawing scrolls into view. */
+  draw?: boolean;
+  /** Crop to part of the drawing, e.g. a detail. Defaults to the whole box. */
+  viewBox?: string;
+  /** Accessible description. Omit when the drawing is decorative. */
+  label?: string;
+  class?: string;
+}
+
+const {
+  id,
+  mode = "render",
+  annotate = false,
+  shadow = true,
+  draw = false,
+  viewBox = "0 0 1000 700",
+  label,
+  class: className = "",
+} = Astro.props;
+
+const render = mode === "render";
+
+/** Rounded rectangle as a path, so it can carry pathLength for the draw-in. */
+const rr = (x: number, y: number, w: number, h: number, r: number) =>
+  `M${x + r} ${y}H${x + w - r}A${r} ${r} 0 0 1 ${x + w} ${y + r}V${y + h - r}` +
+  `A${r} ${r} 0 0 1 ${x + w - r} ${y + h}H${x + r}A${r} ${r} 0 0 1 ${x} ${y + h - r}` +
+  `V${y + r}A${r} ${r} 0 0 1 ${x + r} ${y}Z`;
+
+// The object.
+const BODY = { x: 170, y: 100, w: 660, h: 470, r: 26 };
+const FACE = { x: 194, y: 124, w: 612, h: 422, r: 12 };
+// Depth: the body extruded down and to the right, lit from the top left.
+const DEPTH = { dx: 10, dy: 12, steps: 10 };
+
+// The interface laid into the face.
+const BAR_BOTTOM = 154;
+const RAIL_RIGHT = 236;
+const PANEL_LEFT = 662;
+const CANVAS = { x: RAIL_RIGHT, y: BAR_BOTTOM, w: PANEL_LEFT - RAIL_RIGHT, h: FACE.y + FACE.h - BAR_BOTTOM };
+const RULER = 12;
+const BOARD = { x: 286, y: 198, w: 328, h: 302 };
+const DISC = { cx: 392, cy: 322, r: 74 };
+const SHAPE = { x: 430, y: 262, w: 134, h: 170, r: 16 };
+const SEL = { x: SHAPE.x - 4, y: SHAPE.y - 4, w: SHAPE.w + 8, h: SHAPE.h + 8 };
+
+const selHandles: [number, number][] = [0, 0.5, 1].flatMap((fx) =>
+  [0, 0.5, 1]
+    .filter((fy) => !(fx === 0.5 && fy === 0.5))
+    .map((fy): [number, number] => [SEL.x + SEL.w * fx, SEL.y + SEL.h * fy]),
+);
+
+// Ruler ticks: minor every 16, major every 64, measured from the board.
+const hTicks = Array.from({ length: Math.floor(CANVAS.w / 16) + 1 }, (_, i) => CANVAS.x + RULER + i * 16);
+const vTicks = Array.from({ length: Math.floor(CANVAS.h / 16) + 1 }, (_, i) => CANVAS.y + RULER + i * 16);
+const major = (i: number) => i % 4 === 0;
+
+// Tool rail, top to bottom. Glyphs are drawn around (0, 0) in a 20-unit cell.
+const RAIL_X = (FACE.x + RAIL_RIGHT) / 2;
+const tools = [
+  { d: "M-5 -8V6L-1.4 2.6L1.4 8.6L4 7.4L1.2 1.6H6Z", fill: true },
+  { d: "M0 -8L6 1L2 8H-2L-6 1Z M0 -8V2 M-2 8H2" },
+  { d: "M-7 -6H7V6H-7Z" },
+  { d: "M7 0A7 7 0 1 1 -7 0A7 7 0 1 1 7 0Z" },
+  { d: "M-6 -7H6 M0 -7V8 M-2.5 8H2.5" },
+  { d: "M4 -1A5 5 0 1 1 -6 -1A5 5 0 1 1 4 -1Z M2.6 2.6L7 7" },
+];
+const toolY = (i: number) => BAR_BOTTOM + 24 + i * 34;
+
+// Panel: layers, then properties.
+const P = { x: PANEL_LEFT + 12, w: 806 - PANEL_LEFT - 24 };
+const layers = [
+  { swatch: "#151a28", bar: 58, selected: true },
+  { swatch: "#ff7300", bar: 46, round: true },
+  { swatch: "#6b7590", bar: 70 },
+  { swatch: "#e6e9ef", bar: 38 },
+];
+
+// Structural lines: traced on draw-in, and the whole drawing in outline mode.
+const lines = [
+  rr(BODY.x, BODY.y, BODY.w, BODY.h, BODY.r),
+  rr(FACE.x, FACE.y, FACE.w, FACE.h, FACE.r),
+  `M${FACE.x} ${BAR_BOTTOM}H${FACE.x + FACE.w}`,
+  `M${RAIL_RIGHT} ${BAR_BOTTOM}V${FACE.y + FACE.h}`,
+  `M${PANEL_LEFT} ${BAR_BOTTOM}V${FACE.y + FACE.h}`,
+  rr(BOARD.x, BOARD.y, BOARD.w, BOARD.h, 2),
+  `M${DISC.cx + DISC.r} ${DISC.cy}A${DISC.r} ${DISC.r} 0 1 1 ${DISC.cx - DISC.r} ${DISC.cy}A${DISC.r} ${DISC.r} 0 1 1 ${DISC.cx + DISC.r} ${DISC.cy}Z`,
+  rr(SHAPE.x, SHAPE.y, SHAPE.w, SHAPE.h, SHAPE.r),
+];
+
+const a11y = label ? { role: "img", "aria-label": label } : { "aria-hidden": "true" };
+const [, , vbW, vbH] = viewBox.split(/\s+/).map(Number);
+const u = (name: string) => `url(#${id}-${name})`;
+---
+
+<div
+  class:list={["fd", `fd--${mode}`, { "fd--draw": draw, "fd--annotated": annotate }, className]}
+  style={`aspect-ratio: ${vbW} / ${vbH};`}
+>
+  <svg viewBox={viewBox} preserveAspectRatio="xMidYMid meet" focusable="false" {...a11y}>
+    {
+      render && (
+        <defs>
+          <linearGradient id={`${id}-body`} x1="0" y1="0" x2="0.35" y2="1">
+            <stop offset="0" stop-color="#2b3244" />
+            <stop offset="0.45" stop-color="#171b27" />
+            <stop offset="1" stop-color="#0d1017" />
+          </linearGradient>
+          <linearGradient id={`${id}-sheen`} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#fff" stop-opacity="0.07" />
+            <stop offset="0.3" stop-color="#fff" stop-opacity="0" />
+          </linearGradient>
+          <linearGradient id={`${id}-board`} x1="0" y1="0" x2="0.4" y2="1">
+            <stop offset="0" stop-color="#eef0f4" />
+            <stop offset="1" stop-color="#d6dae2" />
+          </linearGradient>
+          <linearGradient id={`${id}-disc`} x1="0.2" y1="0" x2="0.8" y2="1">
+            <stop offset="0" stop-color="#ff8a24" />
+            <stop offset="1" stop-color="#f06a00" />
+          </linearGradient>
+          <pattern id={`${id}-grid`} width="16" height="16" patternUnits="userSpaceOnUse" x={CANVAS.x + RULER} y={CANVAS.y + RULER}>
+            <path d="M16 0H0V16" fill="none" stroke="#aab9dc" stroke-opacity="0.07" stroke-width="1" />
+          </pattern>
+          <clipPath id={`${id}-face`}>
+            <path d={rr(FACE.x, FACE.y, FACE.w, FACE.h, FACE.r)} />
+          </clipPath>
+          <filter id={`${id}-blur`} x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="20" />
+          </filter>
+        </defs>
+      )
+    }
+
+    {
+      render && (
+        <g class="fd-object">
+          {/* Shadow on the wall, light from the top left. */}
+          {shadow && (
+            <rect
+              x={BODY.x + 22}
+              y={BODY.y + 34}
+              width={BODY.w}
+              height={BODY.h}
+              rx={BODY.r}
+              fill="#000"
+              opacity="0.6"
+              filter={u("blur")}
+            />
+          )}
+
+          {/* Depth: the body stepped back into the wall. */}
+          {Array.from({ length: DEPTH.steps }, (_, i) => {
+            const t = (DEPTH.steps - i) / DEPTH.steps;
+            return (
+              <rect
+                x={BODY.x + DEPTH.dx * t}
+                y={BODY.y + DEPTH.dy * t}
+                width={BODY.w}
+                height={BODY.h}
+                rx={BODY.r}
+                fill={i === 0 ? "#05060a" : "#0a0c12"}
+              />
+            );
+          })}
+
+          {/* Front of the body. */}
+          <rect x={BODY.x} y={BODY.y} width={BODY.w} height={BODY.h} rx={BODY.r} fill={u("body")} />
+          <rect x={BODY.x} y={BODY.y} width={BODY.w} height={BODY.h} rx={BODY.r} fill={u("sheen")} />
+          <path
+            d={`M${BODY.x + BODY.r} ${BODY.y + 1}H${BODY.x + BODY.w - BODY.r}`}
+            stroke="#fff"
+            stroke-opacity="0.28"
+            stroke-width="1.2"
+          />
+          <path
+            d={`M${BODY.x + 1} ${BODY.y + BODY.r}V${BODY.y + BODY.h - BODY.r}`}
+            stroke="#fff"
+            stroke-opacity="0.08"
+            stroke-width="1.2"
+          />
+
+          {/* The face: an interface laid into the object. */}
+          <g clip-path={u("face")}>
+            <rect x={FACE.x} y={FACE.y} width={FACE.w} height={FACE.h} fill="#0d1018" />
+
+            {/* Document bar */}
+            <rect x={FACE.x} y={FACE.y} width={FACE.w} height={BAR_BOTTOM - FACE.y} fill="#131722" />
+            <g transform={`translate(${FACE.x + 8} ${FACE.y + 8}) scale(0.4)`}>
+              <path d="M13 16h11l8 22-6 10z" transform="translate(-12 -15)" fill="#ff7300" />
+              <path d="M40 16h11L38 48H26l6-10z" transform="translate(-12 -15)" fill="#f5f7fa" />
+            </g>
+            <path
+              d={`M${RAIL_RIGHT + 4} ${BAR_BOTTOM}V${FACE.y + 10}Q${RAIL_RIGHT + 4} ${FACE.y + 6} ${RAIL_RIGHT + 8} ${FACE.y + 6}H${RAIL_RIGHT + 112}Q${RAIL_RIGHT + 116} ${FACE.y + 6} ${RAIL_RIGHT + 116} ${FACE.y + 10}V${BAR_BOTTOM}Z`}
+              fill="#0d1018"
+            />
+            <rect x={RAIL_RIGHT + 4} y={FACE.y + 6} width="112" height="1.4" fill="#ff7300" />
+            <text class="fd-t" x={RAIL_RIGHT + 16} y={FACE.y + 22} fill="#c9d0de">FRAME-01</text>
+            <text class="fd-t" x={RAIL_RIGHT + 104} y={FACE.y + 22} fill="#5c6780" text-anchor="end">x</text>
+            <text class="fd-t" x={FACE.x + FACE.w - 12} y={FACE.y + 21} fill="#8a95ad" text-anchor="end">100%</text>
+            <rect x={FACE.x + FACE.w - 84} y={FACE.y + 11} width="30" height="10" rx="5" fill="none" stroke="#3a4257" />
+            <circle cx={FACE.x + FACE.w - 59} cy={FACE.y + 16} r="3" fill="#8a95ad" />
+
+            {/* Canvas: grid, rulers and the board */}
+            <rect x={CANVAS.x} y={CANVAS.y} width={CANVAS.w} height={CANVAS.h} fill="#080a0f" />
+            <rect x={CANVAS.x} y={CANVAS.y} width={CANVAS.w} height={CANVAS.h} fill={u("grid")} />
+            <rect x={CANVAS.x} y={CANVAS.y} width={CANVAS.w} height={RULER} fill="#10131c" />
+            <rect x={CANVAS.x} y={CANVAS.y} width={RULER} height={CANVAS.h} fill="#10131c" />
+            <g stroke="#5c6780" stroke-width="1">
+              {hTicks.map((x, i) => (
+                <path d={`M${x} ${CANVAS.y + RULER}V${CANVAS.y + RULER - (major(i) ? 8 : 3)}`} />
+              ))}
+              {vTicks.map((y, i) => (
+                <path d={`M${CANVAS.x + RULER} ${y}H${CANVAS.x + RULER - (major(i) ? 8 : 3)}`} />
+              ))}
+            </g>
+            {/* Where the selection sits, marked on both rulers. */}
+            <rect x={SEL.x} y={CANVAS.y} width={SEL.w} height={RULER} fill="#ff7300" opacity="0.22" />
+            <rect x={CANVAS.x} y={SEL.y} width={RULER} height={SEL.h} fill="#ff7300" opacity="0.22" />
+
+            <text class="fd-t" x={BOARD.x} y={BOARD.y - 8} fill="#6b7590">ARTBOARD 01</text>
+            <rect x={BOARD.x + 6} y={BOARD.y + 8} width={BOARD.w} height={BOARD.h} fill="#000" opacity="0.45" filter={u("blur")} />
+            <rect x={BOARD.x} y={BOARD.y} width={BOARD.w} height={BOARD.h} rx="2" fill={u("board")} />
+
+            {/* The composition on the board */}
+            <circle cx={DISC.cx} cy={DISC.cy} r={DISC.r} fill={u("disc")} />
+            <rect x={SHAPE.x} y={SHAPE.y} width={SHAPE.w} height={SHAPE.h} rx={SHAPE.r} fill="#151a28" />
+            <path d={`M${BOARD.x + 26} ${BOARD.y + 240}H${BOARD.x + BOARD.w - 26}`} stroke="#151a28" stroke-opacity="0.22" />
+            <rect x={BOARD.x + 26} y={BOARD.y + 254} width="92" height="5" fill="#151a28" opacity="0.85" />
+            <rect x={BOARD.x + 26} y={BOARD.y + 266} width="58" height="4" fill="#151a28" opacity="0.4" />
+            <text class="fd-t" x={BOARD.x + BOARD.w - 26} y={BOARD.y + 30} fill="#151a28" text-anchor="end" opacity="0.7">
+              01
+            </text>
+
+            {/* Selection on the dark shape, with the pointer that made it */}
+            <rect x={SEL.x} y={SEL.y} width={SEL.w} height={SEL.h} fill="none" stroke="#ff7300" stroke-width="1.4" />
+            {selHandles.map(([x, y]) => (
+              <rect x={x - 3.5} y={y - 3.5} width="7" height="7" fill="#fff" stroke="#ff7300" stroke-width="1.2" />
+            ))}
+            <path
+              d="M0 0V21L5.6 15.8L9.4 24L12.6 22.6L8.8 14.6H16Z"
+              transform={`translate(${SEL.x + SEL.w + 6} ${SEL.y + SEL.h + 6})`}
+              fill="#f5f7fa"
+              stroke="#0b0d14"
+              stroke-width="1.2"
+              stroke-linejoin="round"
+            />
+
+            {/* Tool rail */}
+            <rect x={FACE.x} y={BAR_BOTTOM} width={RAIL_RIGHT - FACE.x} height={CANVAS.h} fill="#10131c" />
+            <rect x={RAIL_X - 13} y={toolY(0) - 13} width="26" height="26" rx="6" fill="#ff7300" />
+            {tools.map((tool, i) => (
+              <path
+                d={tool.d}
+                transform={`translate(${RAIL_X} ${toolY(i)})`}
+                fill={tool.fill ? (i === 0 ? "#0b0d14" : "#8a95ad") : "none"}
+                stroke={i === 0 ? "none" : "#8a95ad"}
+                stroke-width="1.4"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+              />
+            ))}
+            {/* Fill and stroke swatches, low on the rail */}
+            <rect x={RAIL_X - 4} y={FACE.y + FACE.h - 40} width="14" height="14" rx="2" fill="none" stroke="#c9d0de" stroke-width="3" />
+            <rect x={RAIL_X - 11} y={FACE.y + FACE.h - 47} width="14" height="14" rx="2" fill="#ff7300" />
+
+            {/* Panel */}
+            <rect x={PANEL_LEFT} y={BAR_BOTTOM} width={806 - PANEL_LEFT} height={CANVAS.h} fill="#10131c" />
+            <text class="fd-t" x={P.x} y={BAR_BOTTOM + 22} fill="#6b7590">LAYERS</text>
+            {layers.map((layer, i) => {
+              const y = BAR_BOTTOM + 32 + i * 22;
+              return (
+                <g>
+                  {layer.selected && <rect x={PANEL_LEFT} y={y} width={806 - PANEL_LEFT} height="20" fill="#ff7300" opacity="0.14" />}
+                  {layer.selected && <rect x={PANEL_LEFT} y={y} width="2" height="20" fill="#ff7300" />}
+                  <circle cx={P.x + 3} cy={y + 10} r="2" fill="#5c6780" />
+                  {layer.round ? (
+                    <circle cx={P.x + 18} cy={y + 10} r="5" fill={layer.swatch} />
+                  ) : (
+                    <rect x={P.x + 13} y={y + 5} width="10" height="10" rx="2" fill={layer.swatch} />
+                  )}
+                  <rect x={P.x + 32} y={y + 8} width={layer.bar} height="4" rx="2" fill={layer.selected ? "#c9d0de" : "#4a5369"} />
+                </g>
+              );
+            })}
+            <path d={`M${PANEL_LEFT} ${BAR_BOTTOM + 130}H806`} stroke="#252b3a" />
+            <text class="fd-t" x={P.x} y={BAR_BOTTOM + 150} fill="#6b7590">PROPERTIES</text>
+            {[0, 1].map((row) =>
+              [0, 1].map((col) => (
+                <rect
+                  x={P.x + col * (P.w / 2 + 3)}
+                  y={BAR_BOTTOM + 160 + row * 22}
+                  width={P.w / 2 - 3}
+                  height="16"
+                  rx="3"
+                  fill="#0b0d14"
+                  stroke="#252b3a"
+                />
+              )),
+            )}
+            <path d={`M${P.x} ${BAR_BOTTOM + 222}H${P.x + P.w}`} stroke="#3a4257" stroke-width="2" stroke-linecap="round" />
+            <path d={`M${P.x} ${BAR_BOTTOM + 222}H${P.x + P.w * 0.72}`} stroke="#ff7300" stroke-width="2" stroke-linecap="round" />
+            <circle cx={P.x + P.w * 0.72} cy={BAR_BOTTOM + 222} r="5" fill="#f5f7fa" />
+            {["#ff7300", "#151a28", "#e6e9ef", "#8a95ad"].map((c, i) => (
+              <rect x={P.x + i * 20} y={BAR_BOTTOM + 238} width="14" height="14" rx="3" fill={c} stroke="#252b3a" />
+            ))}
+            <path d={`M${PANEL_LEFT} ${BAR_BOTTOM + 270}H806`} stroke="#252b3a" />
+            <text class="fd-t" x={P.x} y={BAR_BOTTOM + 290} fill="#6b7590">GRID</text>
+            <rect x={P.x + P.w - 26} y={BAR_BOTTOM + 281} width="26" height="12" rx="6" fill="#ff7300" />
+            <circle cx={P.x + P.w - 7} cy={BAR_BOTTOM + 287} r="4" fill="#f5f7fa" />
+            {/* Navigator: the board in miniature */}
+            <rect x={P.x} y={BAR_BOTTOM + 312} width={P.w} height="62" rx="4" fill="#080a0f" stroke="#252b3a" />
+            <rect x={P.x + P.w / 2 - 30} y={BAR_BOTTOM + 318} width="60" height="50" fill="#d6dae2" />
+            <circle cx={P.x + P.w / 2 - 10} cy={BAR_BOTTOM + 339} r="12" fill="#ff7300" />
+            <rect x={P.x + P.w / 2 - 4} y={BAR_BOTTOM + 330} width="24" height="28" rx="3" fill="#151a28" />
+            <rect x={P.x + P.w / 2 - 36} y={BAR_BOTTOM + 314} width="72" height="58" fill="none" stroke="#ff7300" />
+          </g>
+
+          {/* The face sits a step below the body. */}
+          <path d={rr(FACE.x, FACE.y, FACE.w, FACE.h, FACE.r)} fill="none" stroke="#000" stroke-opacity="0.55" stroke-width="2" />
+          <path
+            d={`M${FACE.x + FACE.r} ${FACE.y + FACE.h + 1}H${FACE.x + FACE.w - FACE.r}`}
+            stroke="#fff"
+            stroke-opacity="0.1"
+          />
+        </g>
+      )
+    }
+
+    {
+      !render && (
+        <g class="fd-sketch" fill="none" stroke-linejoin="round" stroke-linecap="round">
+          {tools.map((tool, i) => (
+            <path d={tool.d} transform={`translate(${RAIL_X} ${toolY(i)})`} />
+          ))}
+          <rect x={SEL.x} y={SEL.y} width={SEL.w} height={SEL.h} class="fd-sketch-sel" />
+          {selHandles.map(([x, y]) => (
+            <rect x={x - 3.5} y={y - 3.5} width="7" height="7" class="fd-sketch-sel" />
+          ))}
+          <path d={`M${CANVAS.x + RULER} ${CANVAS.y}V${CANVAS.y + CANVAS.h} M${CANVAS.x} ${CANVAS.y + RULER}H${CANVAS.x + CANVAS.w}`} />
+          {layers.map((_, i) => (
+            <path d={`M${P.x} ${BAR_BOTTOM + 42 + i * 22}H${P.x + P.w}`} />
+          ))}
+          <path d={`M${BOARD.x + 26} ${BOARD.y + 240}H${BOARD.x + BOARD.w - 26}`} />
+        </g>
+      )
+    }
+
+    <g class="fd-lines" fill="none" stroke-linejoin="round">
+      {lines.map((d) => <path d={d} pathLength="1" />)}
+    </g>
+
+    {
+      annotate && (
+        <g class="fd-notes" fill="none">
+          {/* Overall width: dimension line with extension lines, no figures */}
+          <g class="fd-dim-set">
+            <path class="fd-guide" d={`M${BODY.x} 58V92M${BODY.x + BODY.w} 58V92`} stroke-dasharray="3 4" />
+            <path class="fd-dim" d={`M${BODY.x} 66H${BODY.x + BODY.w}`} />
+            <path class="fd-tick" d={`M${BODY.x} 58V74M${BODY.x + BODY.w} 58V74`} />
+          </g>
+
+          {/* Tool rail, left */}
+          <path class="fd-leader" d={`M${RAIL_X} ${toolY(2)}H112`} />
+          <circle class="fd-node" cx={RAIL_X} cy={toolY(2)} r="3.5" />
+
+          {/* Panel, right */}
+          <path class="fd-leader" d={`M${P.x + P.w / 2} ${BAR_BOTTOM + 42}H888`} />
+          <circle class="fd-node" cx={P.x + P.w / 2} cy={BAR_BOTTOM + 42} r="3.5" />
+
+          {/* Canvas, below */}
+          <path class="fd-leader" d={`M${BOARD.x + 40} ${BOARD.y + BOARD.h - 12}V636`} />
+          <circle class="fd-node" cx={BOARD.x + 40} cy={BOARD.y + BOARD.h - 12} r="3.5" />
+
+          {/* Depth, lower right */}
+          <path class="fd-leader" d={`M${BODY.x + BODY.w + 6} ${BODY.y + BODY.h - 60}L884 ${BODY.y + BODY.h + 16}H918`} />
+          <circle class="fd-node" cx={BODY.x + BODY.w + 6} cy={BODY.y + BODY.h - 60} r="3.5" />
+        </g>
+      )
+    }
+  </svg>
+
+  {
+    annotate && (
+      <div class="fd-labels" aria-hidden="true">
+        <span class="fd-label vx-tech" style="left: 50%; top: 9.4%; transform: translate(-50%, -135%);">
+          Wall object
+        </span>
+        <span class="fd-label vx-tech" style="right: 88.8%; top: 35.1%; transform: translate(-0.5rem, -50%);">
+          Tools
+        </span>
+        <span class="fd-label vx-tech" style="left: 88.8%; top: 28%; transform: translate(0.5rem, -50%);">
+          Panel
+        </span>
+        <span class="fd-label fd-label--accent vx-tech" style="left: 32.6%; top: 90.9%; transform: translate(-50%, 0.35rem);">
+          Canvas
+        </span>
+        <span class="fd-label vx-tech" style="left: 91.8%; top: 83.7%; transform: translate(0.5rem, -50%);">
+          Depth
+        </span>
+      </div>
+    )
+  }
+</div>
+
+<style>
+  .fd {
+    position: relative;
+    width: 100%;
+    container-type: inline-size;
+  }
+
+  .fd svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .fd-t {
+    font-family: var(--font-tech, ui-monospace, monospace);
+    font-size: 8.5px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+  }
+
+  /* Structural lines: only traced during the draw-in on the render (they would
+     cross over shapes that overlap), the whole drawing in outline mode. */
+  .fd-lines path {
+    stroke: rgb(var(--text) / 0);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .fd--outline .fd-lines path,
+  .fd-sketch {
+    stroke: rgb(var(--muted) / 0.62);
+    stroke-width: 1.1;
+  }
+
+  .fd-sketch * {
+    vector-effect: non-scaling-stroke;
+  }
+
+  .fd-sketch {
+    stroke: rgb(var(--muted) / 0.38);
+  }
+
+  .fd-sketch .fd-sketch-sel {
+    stroke: rgb(var(--accent) / 0.8);
+  }
+
+  /* Annotation layer */
+  .fd-notes * {
+    vector-effect: non-scaling-stroke;
+    stroke-width: 1;
+  }
+
+  .fd-guide {
+    stroke: rgb(var(--border) / 0.3);
+  }
+
+  .fd-dim,
+  .fd-leader {
+    stroke: rgb(var(--muted) / 0.6);
+  }
+
+  .fd-tick {
+    stroke: rgb(var(--accent));
+  }
+
+  .fd-node {
+    fill: rgb(var(--accent));
+    stroke: none;
+  }
+
+  .fd-labels {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .fd-label {
+    position: absolute;
+    font-size: max(0.6rem, 1.05cqi);
+    white-space: nowrap;
+    color: rgb(var(--muted));
+  }
+
+  .fd-label--accent {
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    background: rgb(var(--accent));
+    color: rgb(var(--bg));
+    letter-spacing: 0.1em;
+  }
+
+  /* Too small to carry annotations: keep the object, drop the words and the
+     lines that only lead to them. */
+  @container (max-width: 480px) {
+    .fd-notes,
+    .fd-labels {
+      display: none;
+    }
+  }
+
+  /* Draw-in: the lines trace once, then the object settles in and the lines
+     fade back to faint edges. Triggered by the global reveal observer. */
+  .fd--draw .fd-lines path {
+    stroke: rgb(var(--text) / 0.55);
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+
+  .fd--draw .fd-object,
+  .fd--draw .fd-notes,
+  .fd--draw .fd-labels {
+    opacity: 0;
+  }
+
+  :global(.reveal-visible) .fd--draw .fd-lines path {
+    stroke: rgb(var(--text) / 0);
+    stroke-dashoffset: 0;
+    transition:
+      stroke-dashoffset 1.6s cubic-bezier(0.65, 0, 0.35, 1) 0.15s,
+      stroke 1.2s ease 1.6s;
+  }
+
+  :global(.reveal-visible) .fd--draw .fd-object {
+    opacity: 1;
+    transition: opacity 1.2s ease 0.9s;
+  }
+
+  :global(.reveal-visible) .fd--draw .fd-notes,
+  :global(.reveal-visible) .fd--draw .fd-labels {
+    opacity: 1;
+    transition: opacity 0.8s ease 1.6s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fd--draw .fd-lines path {
+      stroke: rgb(var(--text) / 0);
+      stroke-dashoffset: 0;
+    }
+    .fd--draw .fd-object,
+    .fd--draw .fd-notes,
+    .fd--draw .fd-labels {
+      opacity: 1;
+    }
+    :global(.reveal-visible) .fd--draw .fd-lines path,
+    :global(.reveal-visible) .fd--draw .fd-object,
+    :global(.reveal-visible) .fd--draw .fd-notes,
+    :global(.reveal-visible) .fd--draw .fd-labels {
+      transition: none;
+    }
+  }
+</style>
